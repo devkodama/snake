@@ -1,8 +1,8 @@
 //
 // snake.js
 //
+// A snake game
 //
-
 
 
 
@@ -13,27 +13,49 @@ var gameController;
 var playerSnake;
 var playerScore;
 var foodItems;
+var gotItemSound;
 
 
+//
+const UPDATE_INTERVAL = 100;      // in milliseconds
 
 // Canvas is in screen pixels
 const CANVAS_WIDTH = 960;
 const CANVAS_HEIGHT = 480;
 
-// Game is played on the grid
-const GRID_SCALE = 10;
+// Game is played on a grid
+const GRID_SCALE = 30;
 const GRID_WIDTH = CANVAS_WIDTH / GRID_SCALE;
 const GRID_HEIGHT = CANVAS_HEIGHT / GRID_SCALE;
 
-//
+// Scoreboard constants
+const SCORE_FONT = '30px Consolas';
+const SCORE_COLOR = 'black';
+
+// Snake constants
+const SNAKE_HEAD_COLOR = 'blue';
+const SNAKE_BODY_COLOR = 'green';
+const SNAKE_LENGTH = 9;
+const SNAKE_VELOCITY_SCALE = 1;
+
+// Food constants
+const FOOD_MENU = {
+  "donut_blueberry_polka_dot": { points: 20 },
+  "donut_chocolate_confetti": { points: 10 },
+  "donut_chocolate_sprinkle": { points: 10 },
+  "donut_frosted_vanilla": { points: 10 },
+  "donut_glazed": { points: 10 },
+  "donut_lemon_sprinkle": { points: 20 },
+  "donut_pistachio": { points: 30 },
+  "donut_strawberry_chocolate_striped": { points: 20 },
+  "donut_strawberry_coconut": { points: 10 },
+};
+
+
+// Snake and food statuses
 const DEAD = 0;
 const ALIVE = 1;
 const EATEN = 2;
-
-//
-const SNAKE_HEAD_COLOR = "blue";
-const SNAKE_BODY_COLOR = "red";
-const SNAKE_LENGTH = 9;
 
 // Misc constants
 const UP = 0;
@@ -41,17 +63,11 @@ const RIGHT = 1;
 const DOWN = 2;
 const LEFT = 3;
 
-
 // Key codes
 const KEY_UP_ARROW = 38;
 const KEY_DOWN_ARROW = 40;
 const KEY_LEFT_ARROW = 37;
 const KEY_RIGHT_ARROW = 39;
-
-
-//
-const SNACK = 1;
-const FOOD_COLOR_SNACK = "green";
 
 
 
@@ -64,11 +80,42 @@ class Point {
     this.y = y || 0;
   }
 
+  // Adds the point p and returns a new Point object
   add(p) {
     return new Point(this.x + p.x, this.y + p.y);
   }
 
 }
+
+
+// Sound class
+class Sound {
+
+  constructor(name,src) {
+    this.name = name;
+    this.audio = document.createElement("audio");
+    this.audio.setAttribute("id", name);
+    this.audio.src = src;
+    this.audio.setAttribute("preload", "auto");
+    this.audio.setAttribute("controls", "none");
+    this.audio.style.display = "none";
+    document.body.appendChild(this.audio);
+  }
+
+  // start playing the sound
+  play() {
+    let audio = document.getElementById(this.name);
+    audio.currentTime = 0;
+    audio.play();
+  }
+
+  // stop playing the sound
+  stop() {
+    this.audio.pause();
+  }
+
+}
+
 
 
 // Player snake class
@@ -85,25 +132,29 @@ class Snake {
     this.body = [ this.pos ];   // array of Points representing the coordinates of each body segment
                                 // body[0] is the snake head position
 
-    // now add body segments and set initial velocity
+    // now add on body segments and set initial velocity
     let direction = Math.floor(Math.random() * 4);
     let dx, dy;
     switch (direction) {
       case 0:
         dx = 0;  dy = -1;
-        this.vel = new Point(0, 1);
+        this.vel = new Point(0, 1 * SNAKE_VELOCITY_SCALE);
+        this.heading = DOWN;
         break;
       case 1:
         dx = 1;  dy = 0;
-        this.vel = new Point(-1, 0);
+        this.vel = new Point(-1 * SNAKE_VELOCITY_SCALE, 0);
+        this.heading = LEFT;
         break;
       case 2:
         dx = 0;  dy = 1;
-        this.vel = new Point(0, -1);
+        this.vel = new Point(0, -1 * SNAKE_VELOCITY_SCALE);
+        this.heading = UP;
         break;
       case 3:
         dx = -1;  dy = 0;
-        this.vel = new Point(1, 0);
+        this.vel = new Point(1 * SNAKE_VELOCITY_SCALE, 0);
+        this.heading = RIGHT;
         break;
       default:
         // should never get here
@@ -116,46 +167,41 @@ class Snake {
     }
   }
 
-
-  // update the snake velocity based on the specified direction
-  // the snake cannot turn 180 degrees, so check current heading
+  // change the snake velocity based on the specified direction
+  // the snake cannot turn 180 degrees, so need to check current heading
   // before changing directions
   steer(direction) {
-    let headx = this.body[0].x;
-    let heady = this.body[0].y;
-    let neckx = this.body[1].x;
-    let necky = this.body[1].y;
     let heading;
 
-    if (headx == neckx) {
-      heading = (heady < necky) ? UP : DOWN;
-    } else {
-      heading = (headx < neckx) ? LEFT : RIGHT;
-    }
-
+    // change snake direction
+    heading = this.heading;
     switch (direction) {
       case UP:
         if (heading != DOWN) {
           playerSnake.vel.x = 0;
-          playerSnake.vel.y = -1;
+          playerSnake.vel.y = -1 * SNAKE_VELOCITY_SCALE;
+          this.heading = UP;
         }
         break;
       case DOWN:
         if (heading != UP) {
           playerSnake.vel.x = 0;
-          playerSnake.vel.y = 1;
+          playerSnake.vel.y = 1 * SNAKE_VELOCITY_SCALE;
+          this.heading = DOWN;
         }
         break;
       case LEFT:
         if (heading != RIGHT) {
-          playerSnake.vel.x = -1;
+          playerSnake.vel.x = -1 * SNAKE_VELOCITY_SCALE;
           playerSnake.vel.y = 0;
+          this.heading = LEFT;
         }
         break;
       case RIGHT:
         if (heading != LEFT) {
-          playerSnake.vel.x = 1;
+          playerSnake.vel.x = 1 * SNAKE_VELOCITY_SCALE;
           playerSnake.vel.y = 0;
+          this.heading = RIGHT;
         }
         break;
       default:
@@ -163,9 +209,8 @@ class Snake {
     }
   }
 
-
-  // advance the snake position based on its velocity
-  move(grow = false) {
+  // update the snake position based on its velocity
+  update(grow = false) {
     let newPoint;
 
     // calculate a new position for the snake head
@@ -210,7 +255,6 @@ class Snake {
     return false;
   }
 
-
   // draw the snake on the global game canvas
   draw() {
     let p;
@@ -218,32 +262,43 @@ class Snake {
     // get the canvas context
     let ctx = gameCanvas.context;
 
-    // draw head and body segments
-    ctx.fillStyle = this.headcolor;
-    p = this.body[0];
-    ctx.fillRect(p.x*GRID_SCALE, p.y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
-
+    // draw body then head segments
     ctx.fillStyle = this.bodycolor;
     for (let i=1; i<this.body.length; i++) {
       p = this.body[i];
       ctx.fillRect(p.x*GRID_SCALE, p.y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
     }
+    ctx.fillStyle = this.headcolor;
+    p = this.body[0];
+    ctx.fillRect(p.x*GRID_SCALE, p.y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
   }
 
 }
 
 
-// Item class for objects that may appear on the screen
+// Food item class
 
 class Food {
 
-  constructor(x=-1, y=-1, type=SNACK) {
-    this.type = type;
-    this.status = ALIVE;
-    this.color = FOOD_COLOR_SNACK;
+  constructor(x=-1, y=-1, type=null) {
     this.birth = Date.now();
+    this.status = ALIVE;
 
-    if (x<0 || y<0) {
+    // set the food type, or select one at random if not specified
+    if (!(type in FOOD_MENU)) {
+      let menukeys = Object.keys(FOOD_MENU);
+      type = menukeys[Math.floor(Math.random() * menukeys.length)];
+      console.log(type);
+    }
+    this.type = type;
+
+
+    // load image for the food type
+    this.image = new Image();
+    this.image.src = 'assets/' + this.type + '.png';
+
+    // use x, y if specified and in bounds, otherwise random position
+    if (x<0 || y<0 || x>GRID_WIDTH || y>GRID_HEIGHT) {
       // calculate random position
       x = Math.floor(1 + Math.random()*GRID_WIDTH);
       y = Math.floor(1 + Math.random()*GRID_HEIGHT);
@@ -258,15 +313,18 @@ class Food {
   // update the food item
   update() {
     // move its position
-    // make it disappear
     // etc.
   }
 
   // food item gets eaten
   // return points
   eat() {
+    let foodprops = FOOD_MENU[this.type];
+
     this.status = EATEN;
-    return 1;
+    gotItemSound.play();
+
+    return foodprops.points;
   }
 
   // draw the food item on the global game canvas
@@ -274,6 +332,7 @@ class Food {
   draw() {
     let p;
 
+    // don't draw things that have been eaten
     if (this.status == EATEN) {
       return;
     }
@@ -281,13 +340,39 @@ class Food {
     let ctx = gameCanvas.context;
 
     // draw it
-    ctx.fillStyle = this.color;
     p = this.pos;
-    ctx.fillRect(p.x*GRID_SCALE, p.y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
+    ctx.drawImage(this.image, p.x*GRID_SCALE, p.y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
 
   }
 
 }
+
+
+// Player score class
+
+class Score {
+
+    constructor () {
+      this.score = 0;
+      this.pos = new Point(25, 25);
+    }
+
+    add (points) {
+      this.score += points;
+    }
+
+    draw () {
+
+      // get the canvas context
+      let ctx = gameCanvas.context;
+
+      ctx.font = SCORE_FONT;
+      ctx.fillStyle = SCORE_COLOR;
+      ctx.fillText( 'Score: ' + this.score, this.pos.x, this.pos.y);
+    }
+}
+
+
 
 
 // GameGrid class for the game board
@@ -338,6 +423,7 @@ class Controller {
   constructor() {
     this.key = [];
     this.lastkey = null;
+    this.prevkey = null;
 
   }
 
@@ -382,14 +468,14 @@ function gameTick () {
   playerSnake.steer(gameController.direction());
 
   // Update snake position
-  playerSnake.move();
+  playerSnake.update();
 
   // check for snake collisions with items in foodItems
   for (let i=0; i<foodItems.length; i++) {
     if (playerSnake.collision(foodItems[i])) {
-      playerScore += foodItems[i].eat();
+      playerScore.add(foodItems[i].eat());
       playerSnake.growthenergy += 1;
-      // remove the eaten item from foodItems array
+      // reupdate the eaten item from foodItems array
       foodItems.splice(i,1);
 
       console.log(playerScore);
@@ -402,6 +488,7 @@ function gameTick () {
     foodItems[i].draw();
   }
   playerSnake.draw();
+  playerScore.draw();
 
 }
 
@@ -423,26 +510,29 @@ function startGame() {
   // Add event listeners for key presses
   window.addEventListener('keydown', function (e) {
     gameController.key[e.keyCode] = true;
+    gameController.prevkey = gameController.lastkey;
     gameController.lastkey = e.key;
   })
   window.addEventListener('keyup', function (e) {
     gameController.key[e.keyCode] = false;
   })
 
+  // load sounds
+  gotItemSound = new Sound('gotitem', 'assets/gotitem.mp3');
+
+  // Create score Object
+  playerScore = new Score();
 
   // Create player snake of appropriate length
   console.log("Creating player snake...")
   let startpos = new Point(GRID_WIDTH/2, GRID_HEIGHT/2);
   playerSnake = new Snake(startpos);    // head segment created by constructor
 
-  // Starting score
-  playerScore = 0;
-
   // Create global foodItems array
   foodItems = [];
 
   // Start game loop
-  gameCanvas.interval = setInterval(gameTick, 70);
+  gameCanvas.interval = setInterval(gameTick, UPDATE_INTERVAL);
 
   return;
 }
