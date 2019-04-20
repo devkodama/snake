@@ -17,7 +17,7 @@ var gotItemSound;
 
 
 //
-const UPDATE_INTERVAL = 100;      // in milliseconds
+const UPDATE_INTERVAL = 40;      // in milliseconds
 
 // Canvas is in screen pixels
 const CANVAS_WIDTH = 960;
@@ -37,8 +37,8 @@ const SNAKE_HEAD_COLOR = 'blue';
 const SNAKE_BODY_COLOR = 'green';
 const SNAKE_WIDTH = 1;    // in grid units
 const SNAKE_HEIGHT = 1;   // in grid units
-const SNAKE_LENGTH = 9;
-const SNAKE_VELOCITY_SCALE = 0.5;
+const SNAKE_LENGTH = 20;
+const SNAKE_VELOCITY_SCALE = 0.2;
 
 // Food constants
 //   width and height are dimensions of food item in grid units
@@ -54,7 +54,7 @@ const FOOD_MENU = {
   "donut_strawberry_chocolate_striped": { width: 1, height: 1, points: 20 },
   "donut_strawberry_coconut": { width: 1, height: 1, points: 10 },
 };
-const FOOD_GRID_SPACING = 0.5;
+const FOOD_GRID_SPACING = 0.25;
 
 
 // Snake and food statuses
@@ -256,25 +256,10 @@ class Snake {
     // calculate a new position for the snake head
     newPoint = this.body[0].add(this.vel);
 
-    // wrap around
+    // handle wrap around
     newPoint.wrapToGrid();
 
-      while (false) {
-        if (newPoint.x < 0) {
-      newPoint.x = GRID_WIDTH + newPoint.x;
-    }
-    if (newPoint.x >= GRID_WIDTH) {
-      newPoint.x = newPoint.x - GRID_WIDTH;
-    }
-    if (newPoint.y < 0) {
-      newPoint.y = GRID_HEIGHT + newPoint.y;
-    }
-    if (newPoint.y >= GRID_HEIGHT) {
-      newPoint.y = newPoint.y - GRID_HEIGHT;
-    }
-}
-
-    // add new head position to body coordinates array
+    // add new head position to front of body coordinates array
     this.body.unshift(newPoint);
 
     // snake automatically grows if it has positive growthenergy
@@ -287,10 +272,11 @@ class Snake {
   }
 
   // check for collision of snake head with position pos
-  // within tolerance of (GRID_SCALE/SNAKE_VELOCITY_SCALE) pixels
   collision(item) {
     let head;
     let itemprops;
+    let hx, hy;
+    let fx, fy;
     let posx0, posy0;
     let posx1, posy1;
 
@@ -301,16 +287,36 @@ class Snake {
 
     // (posx0, posy0) and (posx1, posy1) define a bounding box within which the
     // food item location (origin) must fall to collide
-    head = this.body[0];
     itemprops = FOOD_MENU[item.type];
-    posx0 = head.x - itemprops.width;
-    posx1 = head.x + this.width;
-    posy0 = head.y - itemprops.height;
-    posy1 = head.y + this.height;
+    fx = item.pos.x;
+    fy = item.pos.y;
 
-    if (item.pos.x > posx0 && item.pos.x < posx1 && item.pos.y > posy0 && item.pos.y < posy1) {
+    head = this.body[0];
+    hx = head.x;
+    hy = head.y;
+
+    if (hx < 1 && fx >= GRID_WIDTH - 1) {
+      fx -= GRID_WIDTH;
+    }
+    if (hy < 1 && fy >= GRID_HEIGHT - 1) {
+      fy -= GRID_HEIGHT;
+    }
+    if (hx >= GRID_WIDTH - 1 && fx < 1) {
+      fx += GRID_WIDTH;
+    }
+    if (hy >= GRID_HEIGHT - 1 && fy < 1) {
+      fy += GRID_HEIGHT;
+    }
+    posx0 = hx - itemprops.width;
+    posx1 = hx + this.width;
+    posy0 = hy - itemprops.height;
+    posy1 = hy + this.height;
+
+    if (fx > posx0 && fx < posx1 && fy > posy0 && fy < posy1) {
         return true;
     }
+
+    // if the
 
     return false;
   }
@@ -330,8 +336,11 @@ class Snake {
   }
 
   // draw the snake on the global game canvas
+  // if the snake extends past the last row or column, need to also draw the part that wraps around
   draw() {
     let p;
+    let x, y;
+    let wrap;
 
     // get the canvas context
     let ctx = gameCanvas.context;
@@ -342,9 +351,27 @@ class Snake {
       p = this.body[i];
       ctx.fillRect(p.x*GRID_SCALE, p.y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
     }
-    ctx.fillStyle = this.headcolor;
     p = this.body[0];
-    ctx.fillRect(p.x*GRID_SCALE, p.y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
+    x = p.x;
+    y = p.y;
+
+    ctx.fillStyle = this.headcolor;
+    ctx.fillRect(x * GRID_SCALE, y * GRID_SCALE, GRID_SCALE, GRID_SCALE);
+
+    // if wraparound, draw again
+    wrap = false;
+    if (x > GRID_WIDTH - 1) {
+      x -= GRID_WIDTH;
+      wrap = true;
+    }
+    if (y > GRID_HEIGHT - 1) {
+      y -= GRID_HEIGHT;
+      wrap = true;
+    }
+    if (wrap) {
+      ctx.fillRect(x * GRID_SCALE, y * GRID_SCALE, GRID_SCALE, GRID_SCALE);
+    }
+
   }
 
 }
@@ -407,6 +434,8 @@ class Food {
   // only draw active items
   draw() {
     let p;
+    let x, y;
+    let wrap;
 
     // don't draw things that have been eaten
     if (this.status == EATEN) {
@@ -417,7 +446,23 @@ class Food {
 
     // draw it
     p = this.pos;
-    ctx.drawImage(this.image, p.x*GRID_SCALE, p.y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
+    x = p.x;
+    y = p.y;
+    ctx.drawImage(this.image, x*GRID_SCALE, y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
+
+    // if wraparound, draw again
+    wrap = false;
+    if (x > GRID_WIDTH - 1) {
+      x -= GRID_WIDTH;
+      wrap = true;
+    }
+    if (y > GRID_HEIGHT - 1) {
+      y -= GRID_HEIGHT;
+      wrap = true;
+    }
+    if (wrap) {
+      ctx.drawImage(this.image, x*GRID_SCALE, y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
+    }
 
   }
 
@@ -534,6 +579,7 @@ class Controller {
 // called every interval to move snake and redraw canvas
 
 function gameTick () {
+  let points;
 
   // Update existing food items
   for (let i=0; i<foodItems.length; i++) {
@@ -554,12 +600,14 @@ function gameTick () {
   // check for snake collisions with items in foodItems
   for (let i=0; i<foodItems.length; i++) {
     if (playerSnake.collision(foodItems[i])) {
-      playerScore.add(foodItems[i].eat());
-      playerSnake.growthenergy += 1;
-      // reupdate the eaten item from foodItems array
+      points = foodItems[i].eat();
+      playerScore.add(points);
+      playerSnake.growthenergy += points/10;
+
+      // remove the eaten item from foodItems array
       foodItems.splice(i,1);
 
-//      console.log(playerScore);
+      console.log(playerScore, playerSnake.growthenergy);
     }
   }
 
