@@ -29,27 +29,32 @@ const GRID_WIDTH = CANVAS_WIDTH / GRID_SCALE;
 const GRID_HEIGHT = CANVAS_HEIGHT / GRID_SCALE;
 
 // Scoreboard constants
-const SCORE_FONT = '30px Consolas';
+const SCORE_FONT = '20px Arial Black';
 const SCORE_COLOR = 'black';
 
 // Snake constants
 const SNAKE_HEAD_COLOR = 'blue';
 const SNAKE_BODY_COLOR = 'green';
+const SNAKE_WIDTH = 1;    // in grid units
+const SNAKE_HEIGHT = 1;   // in grid units
 const SNAKE_LENGTH = 9;
 const SNAKE_VELOCITY_SCALE = 0.5;
 
 // Food constants
+//   width and height are dimensions of food item in grid units
+//   points is score value of food item
 const FOOD_MENU = {
-  "donut_blueberry_polka_dot": { points: 20 },
-  "donut_chocolate_confetti": { points: 10 },
-  "donut_chocolate_sprinkle": { points: 10 },
-  "donut_frosted_vanilla": { points: 10 },
-  "donut_glazed": { points: 10 },
-  "donut_lemon_sprinkle": { points: 20 },
-  "donut_pistachio": { points: 30 },
-  "donut_strawberry_chocolate_striped": { points: 20 },
-  "donut_strawberry_coconut": { points: 10 },
+  "donut_blueberry_polka_dot": { width: 1, height: 1, points: 20 },
+  "donut_chocolate_confetti": { width: 1, height: 1, points: 10 },
+  "donut_chocolate_sprinkle": { width: 1, height: 1, points: 10 },
+  "donut_frosted_vanilla": { width: 1, height: 1, points: 10 },
+  "donut_glazed": { width: 1, height: 1, points: 10 },
+  "donut_lemon_sprinkle": { width: 1, height: 1, points: 20 },
+  "donut_pistachio": { width: 1, height: 1, points: 30 },
+  "donut_strawberry_chocolate_striped": { width: 1, height: 1, points: 20 },
+  "donut_strawberry_coconut": { width: 1, height: 1, points: 10 },
 };
+const FOOD_GRID_SPACING = 0.5;
 
 
 // Snake and food statuses
@@ -71,6 +76,7 @@ const KEY_RIGHT_ARROW = 39;
 
 
 
+
 // Utility class for (x, y) pairs
 
 class Point {
@@ -81,8 +87,40 @@ class Point {
   }
 
   // Adds the point p and returns a new Point object
-  add(p) {
-    return new Point(this.x + p.x, this.y + p.y);
+  add(pt) {
+    return new Point(this.x + pt.x, this.y + pt.y);
+  }
+
+  // restrict points to on-canvas coordiantes by wrap around
+  // if this.x < 0 or this.x >= CANVAS_WIDTH, make it wrap around
+  // if this.y < 0 or this.y >= CANVAS_HEIGHT, make it wrap around
+  wrapToCanvas() {
+    if (this.x < 0) {
+      this.x += CANVAS_WIDTH;
+    } else if (this.x >= CANVAS_WIDTH) {
+      this.x -= CANVAS_WIDTH;
+    }
+    if (this.y < 0) {
+      this.y += CANVAS_HEIGHT;
+    } else if (this.y >= CANVAS_HEIGHT) {
+      this.y -= CANVAS_HEIGHT;
+    }
+  }
+
+  // restrict points to on-GRID_SCALE coordiantes by wrap around
+  // if this.x < 0 or this.x >= GRID_WIDTH, make it wrap around
+  // if this.y < 0 or this.y >= GRID_HEIGHT, make it wrap around
+  wrapToGrid() {
+    if (this.x < 0) {
+      this.x += GRID_WIDTH;
+    } else if (this.x >= GRID_WIDTH) {
+      this.x -= GRID_WIDTH;
+    }
+    if (this.y < 0) {
+      this.y += GRID_HEIGHT;
+    } else if (this.y >= GRID_HEIGHT) {
+      this.y -= GRID_HEIGHT;
+    }
   }
 
 }
@@ -126,6 +164,8 @@ class Snake {
     this.pos = new Point(startpos.x, startpos.y);    // position of snake head
     this.headcolor = SNAKE_HEAD_COLOR;
     this.bodycolor = SNAKE_BODY_COLOR;
+    this.width = SNAKE_WIDTH;
+    this.height = SNAKE_HEIGHT;
     this.status = ALIVE;
     this.growthenergy = 0;
 
@@ -158,7 +198,7 @@ class Snake {
         break;
       default:
         // should never get here
-        console.log('Error in setting initial direction')
+        console.log('error: Error in setting initial direction')
     }
     let nextseg = this.pos;
     for (let i=1; i<startlen; i++) {
@@ -217,7 +257,10 @@ class Snake {
     newPoint = this.body[0].add(this.vel);
 
     // wrap around
-    if (newPoint.x < 0) {
+    newPoint.wrapToGrid();
+
+      while (false) {
+        if (newPoint.x < 0) {
       newPoint.x = GRID_WIDTH + newPoint.x;
     }
     if (newPoint.x >= GRID_WIDTH) {
@@ -229,6 +272,7 @@ class Snake {
     if (newPoint.y >= GRID_HEIGHT) {
       newPoint.y = newPoint.y - GRID_HEIGHT;
     }
+}
 
     // add new head position to body coordinates array
     this.body.unshift(newPoint);
@@ -242,8 +286,38 @@ class Snake {
     }
   }
 
-  // check for collisions with position pos
+  // check for collision of snake head with position pos
+  // within tolerance of (GRID_SCALE/SNAKE_VELOCITY_SCALE) pixels
   collision(item) {
+    let head;
+    let itemprops;
+    let posx0, posy0;
+    let posx1, posy1;
+
+    if (item.status == EATEN) {
+      console.log('warning: checking for collision with eaten item')
+      return false;
+    }
+
+    // (posx0, posy0) and (posx1, posy1) define a bounding box within which the
+    // food item location (origin) must fall to collide
+    head = this.body[0];
+    itemprops = FOOD_MENU[item.type];
+    posx0 = head.x - itemprops.width;
+    posx1 = head.x + this.width;
+    posy0 = head.y - itemprops.height;
+    posy1 = head.y + this.height;
+
+    if (item.pos.x > posx0 && item.pos.x < posx1 && item.pos.y > posy0 && item.pos.y < posy1) {
+        return true;
+    }
+
+    return false;
+  }
+
+  // old collision check
+  // checks for exact collision with position pos.x and pos.y only
+  collision_old(item) {
     if (item.status == EATEN) {
       return false;
     }
@@ -288,22 +362,24 @@ class Food {
     if (!(type in FOOD_MENU)) {
       let menukeys = Object.keys(FOOD_MENU);
       type = menukeys[Math.floor(Math.random() * menukeys.length)];
-      console.log(type);
+//      console.log(type);
     }
     this.type = type;
-
 
     // load image for the food type
     this.image = new Image();
     this.image.src = 'assets/' + this.type + '.png';
 
-    // use x, y if specified and in bounds, otherwise random position
-    if (x<0 || y<0 || x>GRID_WIDTH || y>GRID_HEIGHT) {
+    // use x, y (grid coordinates) if specified, otherwise random position
+    if (x >= 0 && y >= 0) {
+      this.pos = new Point(x);
+    } else {
       // calculate random position
-      x = Math.floor(1 + Math.random()*GRID_WIDTH);
-      y = Math.floor(1 + Math.random()*GRID_HEIGHT);
+      x = Math.floor(1 + Math.random()*(GRID_WIDTH/FOOD_GRID_SPACING));
+      y = Math.floor(1 + Math.random()*(GRID_HEIGHT/FOOD_GRID_SPACING));
+      this.pos = new Point(x * FOOD_GRID_SPACING, y * FOOD_GRID_SPACING);    // position of item
     }
-    this.pos = new Point(x, y);    // position of item
+    this.pos.wrapToGrid();        // wraparound
 
     // make sure it isn't too close to the Snake
     // TODO
@@ -354,7 +430,7 @@ class Score {
 
     constructor () {
       this.score = 0;
-      this.pos = new Point(25, 25);
+      this.pos = new Point(25, 35);
     }
 
     add (points) {
@@ -483,7 +559,7 @@ function gameTick () {
       // reupdate the eaten item from foodItems array
       foodItems.splice(i,1);
 
-      console.log(playerScore);
+//      console.log(playerScore);
     }
   }
 
