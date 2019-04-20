@@ -37,7 +37,8 @@ const SNAKE_HEAD_COLOR = 'blue';
 const SNAKE_BODY_COLOR = 'green';
 const SNAKE_WIDTH = 1;    // in grid units
 const SNAKE_HEIGHT = 1;   // in grid units
-const SNAKE_LENGTH = 20;
+const SNAKE_TURNING_RADIUS = 1.2;   // in grid units
+const SNAKE_LENGTH = 20;  // in units of (grid divided by VELOCITY_SCALE)
 const SNAKE_VELOCITY_SCALE = 0.2;
 
 // Food constants
@@ -167,6 +168,7 @@ class Snake {
     this.width = SNAKE_WIDTH;
     this.height = SNAKE_HEIGHT;
     this.status = ALIVE;
+    this.turndelay = 0;   // countdown number of steps until next turn can be made
     this.growthenergy = 0;
 
     this.body = [ this.pos ];   // array of Points representing the coordinates of each body segment
@@ -177,22 +179,22 @@ class Snake {
     let dx, dy;
     switch (direction) {
       case 0:
-        dx = 0;  dy = -1;
+        dx = 0;  dy = -SNAKE_VELOCITY_SCALE;
         this.vel = new Point(0, 1 * SNAKE_VELOCITY_SCALE);
         this.heading = DOWN;
         break;
       case 1:
-        dx = 1;  dy = 0;
+        dx = SNAKE_VELOCITY_SCALE;  dy = 0;
         this.vel = new Point(-1 * SNAKE_VELOCITY_SCALE, 0);
         this.heading = LEFT;
         break;
       case 2:
-        dx = 0;  dy = 1;
+        dx = 0;  dy = SNAKE_VELOCITY_SCALE;
         this.vel = new Point(0, -1 * SNAKE_VELOCITY_SCALE);
         this.heading = UP;
         break;
       case 3:
-        dx = -1;  dy = 0;
+        dx = -SNAKE_VELOCITY_SCALE;  dy = 0;
         this.vel = new Point(1 * SNAKE_VELOCITY_SCALE, 0);
         this.heading = RIGHT;
         break;
@@ -210,43 +212,61 @@ class Snake {
   // change the snake velocity based on the specified direction
   // the snake cannot turn 180 degrees, so need to check current heading
   // before changing directions
+  // the snake cannot turn tighter than its turning radius
   steer(direction) {
     let heading;
+
+    // exit if no direction specified
+    if (direction == null) {
+      return false;
+    }
+
+    // make sure we are allowed to turn
+    if (this.turndelay > 0) {
+      this.turndelay--;
+      return false;
+    }
 
     // change snake direction
     heading = this.heading;
     switch (direction) {
       case UP:
-        if (heading != DOWN) {
+        if (heading != UP && heading != DOWN) {
           playerSnake.vel.x = 0;
           playerSnake.vel.y = -1 * SNAKE_VELOCITY_SCALE;
           this.heading = UP;
+          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE) - 1;
         }
         break;
       case DOWN:
-        if (heading != UP) {
+        if (heading != DOWN && heading != UP) {
           playerSnake.vel.x = 0;
           playerSnake.vel.y = 1 * SNAKE_VELOCITY_SCALE;
           this.heading = DOWN;
+          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE) - 1;
         }
         break;
       case LEFT:
-        if (heading != RIGHT) {
+        if (heading != LEFT && heading != RIGHT) {
           playerSnake.vel.x = -1 * SNAKE_VELOCITY_SCALE;
           playerSnake.vel.y = 0;
           this.heading = LEFT;
+          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE) - 1;
         }
         break;
       case RIGHT:
-        if (heading != LEFT) {
+        if (heading != RIGHT && heading != LEFT) {
           playerSnake.vel.x = 1 * SNAKE_VELOCITY_SCALE;
           playerSnake.vel.y = 0;
           this.heading = RIGHT;
+          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE) - 1;
         }
         break;
       default:
         // no valid direction, maintain previous velocity
     }
+
+    return true;
   }
 
   // update the snake position based on its velocity
@@ -607,7 +627,7 @@ function gameTick () {
       // remove the eaten item from foodItems array
       foodItems.splice(i,1);
 
-      console.log(playerScore, playerSnake.growthenergy);
+//      console.log(playerScore, playerSnake.growthenergy);
     }
   }
 
