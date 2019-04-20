@@ -36,7 +36,7 @@ const SCORE_COLOR = 'black';
 const SNAKE_HEAD_COLOR = 'blue';
 const SNAKE_BODY_COLOR = 'green';
 const SNAKE_LENGTH = 9;
-const SNAKE_VELOCITY_SCALE = 1;
+const SNAKE_VELOCITY_SCALE = 0.5;
 
 // Food constants
 const FOOD_MENU = {
@@ -405,12 +405,17 @@ class Canvas {
     this.canvas.width = CANVAS_WIDTH;
     this.canvas.height = CANVAS_HEIGHT;
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+    // load background image
+    this.backgroundimage = new Image();
+    this.backgroundimage.src = "assets/background.png"
+
   }
 
-  // erases the canvas
+  // erase the canvas and draw background
   clear() {
     this.context.fillStyle = "white";
     this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context.drawImage(this.backgroundimage, 0, 0, this.canvas.width, this.canvas.height);
   }
 
 }
@@ -518,7 +523,7 @@ function startGame() {
   })
 
   // load sounds
-  gotItemSound = new Sound('gotitem', 'assets/gotitem.mp3');
+  gotItemSound = new Sound('gotitem', 'assets/eat.wav');
 
   // Create score Object
   playerScore = new Score();
