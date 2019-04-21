@@ -24,7 +24,7 @@ const CANVAS_WIDTH = 960;
 const CANVAS_HEIGHT = 480;
 
 // Game is played on a grid
-const GRID_SCALE = 30;
+const GRID_SCALE = 40;
 const GRID_WIDTH = CANVAS_WIDTH / GRID_SCALE;
 const GRID_HEIGHT = CANVAS_HEIGHT / GRID_SCALE;
 
@@ -33,13 +33,14 @@ const SCORE_FONT = '20px Arial Black';
 const SCORE_COLOR = 'black';
 
 // Snake constants
+const SNAKE_COLOR = 'green';
 const SNAKE_HEAD_COLOR = 'blue';
 const SNAKE_BODY_COLOR = 'green';
-const SNAKE_WIDTH = 1;    // in grid units
-const SNAKE_HEIGHT = 1;   // in grid units
-const SNAKE_TURNING_RADIUS = 1.2;   // in grid units
+const SNAKE_WIDTH = 0.7;    // in grid units
+const SNAKE_TURNING_RADIUS = 0.5;   // in grid units
 const SNAKE_LENGTH = 20;  // in units of (grid divided by VELOCITY_SCALE)
-const SNAKE_VELOCITY_SCALE = 0.2;
+const SNAKE_VELOCITY_SCALE = 0.2; // in grid units
+const SNAKE_INV_VELOCITY2 = Math.floor(1 / (2 * SNAKE_VELOCITY_SCALE));
 
 // Food constants
 //   width and height are dimensions of food item in grid units
@@ -55,7 +56,7 @@ const FOOD_MENU = {
   "donut_strawberry_chocolate_striped": { width: 1, height: 1, points: 20 },
   "donut_strawberry_coconut": { width: 1, height: 1, points: 10 },
 };
-const FOOD_GRID_SPACING = 0.25;
+const FOOD_GRID_SPACING = 0.2;
 
 
 // Snake and food statuses
@@ -163,16 +164,22 @@ class Snake {
 
   constructor(startpos, startlen=SNAKE_LENGTH) {
     this.pos = new Point(startpos.x, startpos.y);    // position of snake head
+    this.color = SNAKE_COLOR;
     this.headcolor = SNAKE_HEAD_COLOR;
     this.bodycolor = SNAKE_BODY_COLOR;
     this.width = SNAKE_WIDTH;
-    this.height = SNAKE_HEIGHT;
     this.status = ALIVE;
+    this.justturned = false;
     this.turndelay = 0;   // countdown number of steps until next turn can be made
     this.growthenergy = 0;
 
-    this.body = [ this.pos ];   // array of Points representing the coordinates of each body segment
-                                // body[0] is the snake head position
+    // array of Points representing the coordinates of each body segment
+    // body[0] is the snake head position
+    this.body = [ this.pos ];
+
+    // array of booleans representing the turning points of the snake
+    // indices align with body array
+    this.corner = [ false ];
 
     // now add on body segments and set initial velocity
     let direction = Math.floor(Math.random() * 4);
@@ -206,6 +213,7 @@ class Snake {
     for (let i=1; i<startlen; i++) {
       nextseg = nextseg.add(new Point(dx,dy));
       this.body[i] = nextseg;
+      this.corner[i] = false;
     }
   }
 
@@ -235,7 +243,8 @@ class Snake {
           playerSnake.vel.x = 0;
           playerSnake.vel.y = -1 * SNAKE_VELOCITY_SCALE;
           this.heading = UP;
-          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE) - 1;
+          this.justturned = true;
+          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE);
         }
         break;
       case DOWN:
@@ -243,7 +252,8 @@ class Snake {
           playerSnake.vel.x = 0;
           playerSnake.vel.y = 1 * SNAKE_VELOCITY_SCALE;
           this.heading = DOWN;
-          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE) - 1;
+          this.justturned = true;
+          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE);
         }
         break;
       case LEFT:
@@ -251,7 +261,8 @@ class Snake {
           playerSnake.vel.x = -1 * SNAKE_VELOCITY_SCALE;
           playerSnake.vel.y = 0;
           this.heading = LEFT;
-          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE) - 1;
+          this.justturned = true;
+          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE);
         }
         break;
       case RIGHT:
@@ -259,7 +270,8 @@ class Snake {
           playerSnake.vel.x = 1 * SNAKE_VELOCITY_SCALE;
           playerSnake.vel.y = 0;
           this.heading = RIGHT;
-          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE) - 1;
+          this.justturned = true;
+          this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE);
         }
         break;
       default:
@@ -273,6 +285,12 @@ class Snake {
   update(grow = false) {
     let newPoint;
 
+    // if we just turned, flag the turn point
+    if (this.justturned) {
+      this.justturned = false;
+      this.corner[0] = true;
+    }
+
     // calculate a new position for the snake head
     newPoint = this.body[0].add(this.vel);
 
@@ -281,6 +299,7 @@ class Snake {
 
     // add new head position to front of body coordinates array
     this.body.unshift(newPoint);
+    this.corner.unshift(false);   // set corner flag of new position to false
 
     // snake automatically grows if it has positive growthenergy
     // if not allowing the snake to grow, remove tail position to keep snake the same length
@@ -288,6 +307,7 @@ class Snake {
       this.growthenergy -= 1;
     } else if (!grow) {
       this.body.pop();
+      this.corner.pop();
     }
   }
 
@@ -301,19 +321,20 @@ class Snake {
     let posx1, posy1;
 
     if (item.status == EATEN) {
-      console.log('warning: checking for collision with eaten item')
+      console.log('warning: checking for collision with already eaten item')
       return false;
     }
 
     // (posx0, posy0) and (posx1, posy1) define a bounding box within which the
     // food item location (origin) must fall to collide
+
     itemprops = FOOD_MENU[item.type];
     fx = item.pos.x;
     fy = item.pos.y;
 
     head = this.body[0];
-    hx = head.x;
-    hy = head.y;
+    hx = head.x - this.width / 2;
+    hy = head.y - this.width / 2;
 
     if (hx < 1 && fx >= GRID_WIDTH - 1) {
       fx -= GRID_WIDTH;
@@ -330,7 +351,7 @@ class Snake {
     posx0 = hx - itemprops.width;
     posx1 = hx + this.width;
     posy0 = hy - itemprops.height;
-    posy1 = hy + this.height;
+    posy1 = hy + this.width;
 
     if (fx > posx0 && fx < posx1 && fy > posy0 && fy < posy1) {
         return true;
@@ -341,23 +362,108 @@ class Snake {
     return false;
   }
 
-  // old collision check
-  // checks for exact collision with position pos.x and pos.y only
-  collision_old(item) {
-    if (item.status == EATEN) {
-      return false;
-    }
-    for (let i=0; i<this.body.length; i++) {
-      if (this.body[i].x == item.pos.x && this.body[i].y == item.pos.y) {
-        return true;
+  // draw the snake on the global game canvas
+  // if the snake extends past the last row or column, need to also draw the part that wraps around
+  //
+  draw() {
+    let headpos, tailpos;
+    let p;
+    let x, y;
+    let wrap;
+
+    let ctx;
+    let cornerindex;
+    let preindex;
+    let postindex;
+    let prediff;
+    let postdiff;
+    let cornerpos;
+    let prepos;
+    let postpos;
+    let radius;
+    let radiusx, radiusy;
+
+    // get the canvas context
+    ctx = gameCanvas.context;
+
+    // draw snake from head to tail then draws head
+
+    // get head and tail positions
+    headpos = this.body[0];
+    tailpos = this.body[this.body.length-1];
+
+    // define path
+    ctx.beginPath();
+    ctx.moveTo(headpos.x * GRID_SCALE, headpos.y * GRID_SCALE);
+
+    // find each corner
+    cornerindex = -1;
+    for (let i = 1; i < this.body.length; i++) {
+
+      // find the starting and ending points of the turn, as indexed by preindex and postindex
+      if (this.corner[i]) {
+        cornerindex = i;
+        preindex = i - SNAKE_INV_VELOCITY2;
+        postindex = i + SNAKE_INV_VELOCITY2;
+        if (preindex < 0) {
+          preindex = 0;
+        }
+        if (postindex > this.body.length - 1) {
+          postindex = this.body.length - 1;
+        }
+
+        prediff = cornerindex - preindex;
+        postdiff = postindex - cornerindex;
+        if (prediff > postdiff) {
+          preindex += (prediff - postdiff);
+        }
+        if (postdiff > prediff) {
+          postindex -= (postdiff - prediff);
+        }
+
+
+        prepos = this.body[preindex];
+        cornerpos = this.body[cornerindex];
+        postpos = this.body[postindex];
+
+        radiusx = Math.max(Math.abs(cornerpos.x - prepos.x), Math.abs(postpos.x - cornerpos.x));
+        radiusy = Math.max(Math.abs(cornerpos.y - prepos.y), Math.abs(postpos.y - cornerpos.y));
+        radius = Math.min(radiusx, radiusy);
+
+        // line to starting point of turn
+        ctx.lineTo(prepos.x * GRID_SCALE, prepos.y * GRID_SCALE);
+
+        // create turn
+        ctx.arcTo(cornerpos.x * GRID_SCALE, cornerpos.y * GRID_SCALE, postpos.x * GRID_SCALE, postpos.y * GRID_SCALE, radius * GRID_SCALE);
       }
     }
-    return false;
+
+    // finish tail
+    if (cornerindex < 0 || postindex < this.body.length - 1) {
+        // still have some tail after the last turn
+        ctx.lineTo(tailpos.x * GRID_SCALE, tailpos.y * GRID_SCALE);
+    }
+
+    // render path
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = SNAKE_WIDTH * GRID_SCALE;
+    ctx.strokeStyle = "blue";
+    ctx.stroke();
+
+    // now draw the head
+    ctx.beginPath();
+    ctx.arc(headpos.x * GRID_SCALE, headpos.y * GRID_SCALE, (SNAKE_WIDTH * GRID_SCALE) / 2, 0, 2 * Math.PI);
+    ctx.fillStyle = "red";
+    ctx.fill();
+
+
   }
+
 
   // draw the snake on the global game canvas
   // if the snake extends past the last row or column, need to also draw the part that wraps around
-  draw() {
+  draw_old() {
     let p;
     let x, y;
     let wrap;
@@ -419,14 +525,14 @@ class Food {
 
     // use x, y (grid coordinates) if specified, otherwise random position
     if (x >= 0 && y >= 0) {
-      this.pos = new Point(x);
+      this.pos = new Point(x, y);
     } else {
       // calculate random position
       x = Math.floor(1 + Math.random()*(GRID_WIDTH/FOOD_GRID_SPACING));
       y = Math.floor(1 + Math.random()*(GRID_HEIGHT/FOOD_GRID_SPACING));
-      this.pos = new Point(x * FOOD_GRID_SPACING, y * FOOD_GRID_SPACING);    // position of item
+      this.pos = new Point(x * FOOD_GRID_SPACING, y * FOOD_GRID_SPACING);    // grid position of item
     }
-    this.pos.wrapToGrid();        // wraparound
+    this.pos.wrapToGrid();        // handle position wraparound
 
     // make sure it isn't too close to the Snake
     // TODO
@@ -461,14 +567,18 @@ class Food {
     if (this.status == EATEN) {
       return;
     }
+
     // get the canvas context
     let ctx = gameCanvas.context;
 
+
     // draw it
+    let foodprops = FOOD_MENU[this.type];
+
     p = this.pos;
     x = p.x;
     y = p.y;
-    ctx.drawImage(this.image, x*GRID_SCALE, y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
+    ctx.drawImage(this.image, x * GRID_SCALE, y * GRID_SCALE, foodprops.width * GRID_SCALE, foodprops.height * GRID_SCALE);
 
     // if wraparound, draw again
     wrap = false;
@@ -481,7 +591,7 @@ class Food {
       wrap = true;
     }
     if (wrap) {
-      ctx.drawImage(this.image, x*GRID_SCALE, y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
+      ctx.drawImage(this.image, x * GRID_SCALE, y * GRID_SCALE, foodprops.width * GRID_SCALE, foodprops.height * GRID_SCALE);
     }
 
   }
