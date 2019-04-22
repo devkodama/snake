@@ -568,7 +568,7 @@ class Food {
   draw() {
     let p;
     let x, y;
-    let wrap;
+    let wrapdx, wrapdy;
 
     // don't draw things that have been eaten
     if (this.status == EATEN) {
@@ -588,14 +588,28 @@ class Food {
     ctx.drawImage(this.image, x * GRID_SCALE, y * GRID_SCALE, foodprops.width * GRID_SCALE, foodprops.height * GRID_SCALE);
 
     // if wraparound, draw again
-    wrap = false;
-    if (x + foodprops.width > GRID_WIDTH || y + foodprops.height > GRID_HEIGHT) {
-      wrap = true;
+    wrapdx = 0;
+    wrapdy = 0;
+    if (x + foodprops.width > GRID_WIDTH) {
+      wrapdx = -GRID_WIDTH * GRID_SCALE;
     }
-    if (wrap) {
-      ctx.translate(-GRID_WIDTH, -GRID_HEIGHT);
+    if (y + foodprops.height > GRID_HEIGHT) {
+      wrapdy = -GRID_HEIGHT * GRID_SCALE;
+    }
+    if (wrapdx) {
+      ctx.translate(wrapdx, 0);
       ctx.drawImage(this.image, x * GRID_SCALE, y * GRID_SCALE, foodprops.width * GRID_SCALE, foodprops.height * GRID_SCALE);
-      ctx.translate(GRID_WIDTH, GRID_HEIGHT);
+      ctx.translate(-wrapdx, 0);
+    }
+    if (wrapdy) {
+      ctx.translate(0, wrapdy);
+      ctx.drawImage(this.image, x * GRID_SCALE, y * GRID_SCALE, foodprops.width * GRID_SCALE, foodprops.height * GRID_SCALE);
+      ctx.translate(0, -wrapdy);
+    }
+    if (wrapdx && wrapdy) {
+      ctx.translate(wrapdx, wrapdy);
+      ctx.drawImage(this.image, x * GRID_SCALE, y * GRID_SCALE, foodprops.width * GRID_SCALE, foodprops.height * GRID_SCALE);
+      ctx.translate(-wrapdx, -wrapdy);
     }
 
   }
@@ -721,7 +735,7 @@ function gameTick () {
   }
 
   // Add some new food items randomly
-  if (Math.random() < 0.10 ) {
+  if (Math.random() < 0.50 ) {
     foodItems.push(new Food());
   }
 
