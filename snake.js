@@ -58,6 +58,7 @@ const FOOD_MENU = {
   "kk_coffee_cup": { width: 1, height: 1.5, points: 50 },
 };
 const FOOD_GRID_SPACING = 0.2;
+const FOOD_RATE = 0.1;
 
 
 // Snake and food statuses
@@ -735,7 +736,7 @@ function gameTick () {
   }
 
   // Add some new food items randomly
-  if (Math.random() < 0.50 ) {
+  if (Math.random() < FOOD_RATE ) {
     foodItems.push(new Food());
   }
 
