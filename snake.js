@@ -508,8 +508,7 @@ class Snake {
 class Food {
 
   constructor(x=-1, y=-1, type=null) {
-    this.birth = Date.now();
-    this.status = ALIVE;
+    let foodprops;
 
     // set the food type, or select one at random if not specified
     if (!(type in FOOD_MENU)) {
@@ -517,7 +516,14 @@ class Food {
       type = menukeys[Math.floor(Math.random() * menukeys.length)];
 //      console.log(type);
     }
+    foodprops = FOOD_MENU[type];
+
+    // set properties for this object
+    this.birth = Date.now();
+    this.status = ALIVE;
     this.type = type;
+    this.width = foodprops.width;
+    this.height = foodprops.height;
 
     // load image for the food type
     this.image = new Image();
@@ -582,16 +588,13 @@ class Food {
 
     // if wraparound, draw again
     wrap = false;
-    if (x > GRID_WIDTH - 1) {
-      x -= GRID_WIDTH;
-      wrap = true;
-    }
-    if (y > GRID_HEIGHT - 1) {
-      y -= GRID_HEIGHT;
+    if (x + foodprops.width > GRID_WIDTH || y + foodprops.height > GRID_HEIGHT) {
       wrap = true;
     }
     if (wrap) {
+      ctx.translate(-GRID_WIDTH, -GRID_HEIGHT);
       ctx.drawImage(this.image, x * GRID_SCALE, y * GRID_SCALE, foodprops.width * GRID_SCALE, foodprops.height * GRID_SCALE);
+      ctx.translate(GRID_WIDTH, GRID_HEIGHT);
     }
 
   }
