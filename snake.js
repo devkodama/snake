@@ -55,6 +55,7 @@ const FOOD_MENU = {
   "donut_pistachio": { width: 1, height: 1, points: 30 },
   "donut_strawberry_chocolate_striped": { width: 1, height: 1, points: 20 },
   "donut_strawberry_coconut": { width: 1, height: 1, points: 10 },
+  "kk_coffee_cup": { width: 1, height: 1.5, points: 50 },
 };
 const FOOD_GRID_SPACING = 0.2;
 
