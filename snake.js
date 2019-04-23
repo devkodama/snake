@@ -875,7 +875,7 @@ class Controller {
 
     if (this.lastkey) {
 
-      debugDisplay.print("lastkey = " + this.lastkey);
+//      debugDisplay.print("lastky = " + this.lastkey);
 
       switch (this.lastkey) {
         case 'ArrowUp':
@@ -908,18 +908,18 @@ class Controller {
 
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) {
-          this.lastkey = 'ArrowRight';
+//          this.lastkey = 'ArrowRight';
           return RIGHT;
         } else {
-          this.lastkey = 'ArrowLeft';
+//          this.lastkey = 'ArrowLeft';
           return LEFT;
         }
       } else {
         if (dy > 0) {
-          this.lastkey = 'ArrowDown';
+//          this.lastkey = 'ArrowDown';
           return DOWN;
         } else {
-          this.lastkey = 'ArrowUp';
+//          this.lastkey = 'ArrowUp';
           return UP;
         }
       }
