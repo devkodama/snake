@@ -1020,14 +1020,13 @@ function initializeGame() {
     gameController.touchx = e.touches[0].pageX - canvas.offsetLeft;
     gameController.touchy = e.touches[0].pageY - canvas.offsetTop;
     e.preventDefault();
-    {
 
-      // get the canvas context
+    {
       let ctx = gameCanvas.context;
 
       ctx.font = "12 pt Arial";
       ctx.fillStyle = "blue";
-      ctx.fillText( 'touchx ' + this.touchx + 'touchy ' + this.touchy, CANVAS_WIDTH / 2 - 20, CANVAS_HEIGHT / 2);
+      ctx.fillText( 'touchx ' + gameController.touchx + 'touchy ' + gameController.touchy, CANVAS_WIDTH / 2 - 20, CANVAS_HEIGHT / 2);
     }
 
   })
