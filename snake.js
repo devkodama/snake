@@ -28,44 +28,47 @@ const GRID_SCALE = 40;
 const GRID_WIDTH = CANVAS_WIDTH / GRID_SCALE;
 const GRID_HEIGHT = CANVAS_HEIGHT / GRID_SCALE;
 
-// Scoreboard constants
-const SCORE_FONT = '20px Arial Black';
-const SCORE_COLOR = 'black';
-
 // Snake constants
 const SNAKE_COLOR = 'green';
 const SNAKE_HEAD_COLOR = 'blue';
 const SNAKE_BODY_COLOR = 'green';
 const SNAKE_TAIL_COLOR = "red";
-const SNAKE_HEAD_WIDTH = 0.8;   // in grid units
-const SNAKE_BODY_WIDTH = 0.7;   // in grid units
+const SNAKE_HEAD_WIDTH = 0.7;   // in grid units
+const SNAKE_BODY_WIDTH = 0.6;   // in grid units
 const SNAKE_TAIL_WIDTH = 0.2    // in grid units
-const SNAKE_LENGTH = 8;         // in grid units
+const SNAKE_LENGTH = 6;         // in grid units
 const SNAKE_TAIL_LENGTH = 4     // in grid units
 const SNAKE_TURNING_RADIUS = 1;     // in grid units
-const SNAKE_VELOCITY_SCALE = 0.2;   // in grid units
+const SNAKE_VELOCITY_SCALE = 0.12;   // in grid units
 const SNAKE_RADIUS_OVERLAP = 0.8;   // in grid units
-const SNAKE_SPEED_INITIAL = 10;   // in arbitray units
+const SNAKE_SPEED_INITIAL = 5;   // in arbitray units
 const SNAKE_SPEED_MAX = 1;        // in arbitray units
+
+// Scoreboard constants
+const SCORE_FONT = '20px Arial Black';
+const SCORE_COLOR = 'black';
+const SCORE_MULTIPLIER = [ 0, 10, 5, 3, 2, 1 ];   // indexed by snake speed (1-5)
 
 // Food constants
 //   width and height are dimensions of food item in grid units
 //   points is score value of food item
+//   speedup is speedup additive when food is eaten
+//   speedup duration is how long in milliseconds the speedup lasts
 const FOOD_MENU = {
-  "donut_blueberry_polka_dot": { width: 1, height: 1, points: 20 },
-  "donut_chocolate_confetti": { width: 1, height: 1, points: 10 },
-  "donut_chocolate_sprinkle": { width: 1, height: 1, points: 10 },
-  "donut_frosted_vanilla": { width: 1, height: 1, points: 10 },
-  "donut_glazed": { width: 1, height: 1, points: 10 },
-  "donut_lemon_sprinkle": { width: 1, height: 1, points: 20 },
-  "donut_pistachio": { width: 1, height: 1, points: 30 },
-  "donut_strawberry_chocolate_striped": { width: 1, height: 1, points: 20 },
-  "donut_strawberry_coconut": { width: 1, height: 1, points: 10 },
-  "kk_coffee_cup": { width: 1, height: 1.5, points: 50 },
+  "donut_blueberry_polka_dot": { width: 1, height: 1, points: 20, speedup: 0, speedupduration: 0 },
+  "donut_chocolate_confetti": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
+  "donut_chocolate_sprinkle": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
+  "donut_frosted_vanilla": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
+  "donut_glazed": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
+  "donut_lemon_sprinkle": { width: 1, height: 1, points: 20, speedup: 0, speedupduration: 0 },
+  "donut_pistachio": { width: 1, height: 1, points: 30, speedup: 0, speedupduration: 0 },
+  "donut_strawberry_chocolate_striped": { width: 1, height: 1, points: 20, speedup: 0, speedupduration: 0 },
+  "donut_strawberry_coconut": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
+  "kk_coffee_cup": { width: 1, height: 1.5, points: 50, speedup: 1, speedupduration: 10000 },
 };
 const FOOD_GRID_SPACING = 0.2;    // in grid units
 const FOOD_OVERLAP = 0.9;     // in grid units
-const FOOD_RATE = 0.05;       // percentage chance of a new food item each game tick
+const FOOD_RATE = 0.005;       // percentage chance of a new food item each game tick
 
 // Snake and food statuses
 const DEAD = 0;
@@ -559,6 +562,8 @@ class Food {
     this.type = type;
     this.width = foodprops.width;
     this.height = foodprops.height;
+    this.speedup = foodprops.speedup;
+    this.speedupduration = foodprops.speedupduration;
 
     // load image for the food type
     this.image = new Image();
@@ -785,21 +790,29 @@ function gameTick () {
 
     // check for snake collision with self
     if (playerSnake.collideWithSelf()) {
-      playerDiedSound.play();
+      playerDeadSound.play();
       playerSnake.status = DEAD;
     }
 
     // check for snake collisions with items in foodItems
-    for (let i=0; i<foodItems.length; i++) {
+    for (let i = 0; i < foodItems.length; i++) {
       if (playerSnake.collideWithFood(foodItems[i])) {
         points = foodItems[i].eat();
-        playerScore.add(points);
+        playerScore.add(points * SCORE_MULTIPLIER[playerSnake.speed]);
         playerSnake.growthenergy += points/10;
 
-        // remove the eaten item from foodItems array
-        foodItems.splice(i,1);
+        // handle speedup
+        let speedup = foodItems[i].speedup;
+        let duration = foodItems[i].speedupduration;
+        if (speedup > 0) {
+          if (playerSnake.speed > speedup) {
+            playerSnake.speed -= speedup;
+            setTimeout( () => { playerSnake.speed += speedup; }, duration);
+          }
+        }
 
-  //      console.log(playerScore, playerSnake.growthenergy);
+        // remove the eaten item from foodItems array -  this has to be done last
+        foodItems.splice(i,1);
       }
     }
 
@@ -842,7 +855,7 @@ function startGame() {
 
   // load sounds
   gotItemSound = new Sound('eat', 'assets/eat.wav');
-  playerDiedSound = new Sound('die', 'assets/die.wav');
+  playerDeadSound = new Sound('die', 'assets/die.wav');
 
   // Create score Object
   playerScore = new Score();
