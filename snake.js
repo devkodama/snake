@@ -897,6 +897,9 @@ class Controller {
 
     } else if (this.newTouch) {
 
+//      this.touchx = 500;
+//      this.touchy = 400;
+
       // calculate direction based on vector from snake's head
       dx = playerSnake.body[0].x - this.touchx / GRID_SCALE;
       dy = playerSnake.body[0].y - this.touchy / GRID_SCALE;
@@ -907,6 +910,8 @@ class Controller {
       // reset touch after responding to it
 //      this.touchx = -1;
 //      this.touchy = -1;
+gameController.newTouch = false;
+
 
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) {
