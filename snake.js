@@ -969,7 +969,7 @@ function initializeGame() {
   })
 
   // load sounds
-  gotItemSound = new Sound('eat', 'assets/eat.wav');
+  gotItemSound = new Sound('eat', 'assets/eat.mp3');
   playerDeadSound = new Sound('die', 'assets/die.wav');
 
   // Create score Object
