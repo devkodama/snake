@@ -1025,15 +1025,15 @@ function initializeGame() {
   window.addEventListener('touchstart', function (e) {
     gameController.prevkey = gameController.lastkey;
     gameController.lastkey = null;
-    gameController.touchx = e.touches[0].pageX - canvas.offsetLeft;
-    gameController.touchy = e.touches[0].pageY - canvas.offsetTop;
+    gameController.touchx = e.touches[0].screenX;
+    gameController.touchy = e.touches[0].screenY;
     e.preventDefault();
 
     {
       let ctx = gameCanvas.context;
 
       ctx.font = "12 pt Arial";
-      ctx.fillStyle = "blue";
+      ctx.fillStyle = "red";
       ctx.fillText( 'touchx ' + gameController.touchx + 'touchy ' + gameController.touchy, CANVAS_WIDTH / 2 - 20, CANVAS_HEIGHT / 2);
     }
 
@@ -1041,8 +1041,8 @@ function initializeGame() {
   window.addEventListener('touchmove', function (e) {
     gameController.prevkey = gameController.lastkey;
     gameController.lastkey = null;
-    gameController.touchx = e.touches[0].pageX - canvas.offsetLeft;
-    gameController.touchy = e.touches[0].pageY - canvas.offsetTop;
+    gameController.touchx = e.touches[0].screenX;
+    gameController.touchy = e.touches[0].screenY;
     e.preventDefault();
   })
 
