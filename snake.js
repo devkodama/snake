@@ -479,12 +479,12 @@ class Snake {
       // if wraparound, draw again
       wrapdx = 0;
       wrapdy = 0;
-      if (x + r > GRID_WIDTH) {
+      if (x + r >= GRID_WIDTH) {
         wrapdx = -GRID_WIDTH * GRID_SCALE;
       } else if (x - r < 0) {
         wrapdx = GRID_WIDTH * GRID_SCALE;
       }
-      if (y + r > GRID_HEIGHT) {
+      if (y + r >= GRID_HEIGHT) {
         wrapdy = -GRID_HEIGHT * GRID_SCALE;
       } else if (y - r < 0) {
         wrapdy = GRID_HEIGHT * GRID_SCALE;
@@ -608,6 +608,7 @@ class Food {
   draw() {
     let p;
     let x, y;
+    let w, h;
     let wrapdx, wrapdy;
 
     // don't draw things that have been eaten
@@ -618,23 +619,29 @@ class Food {
     // get the canvas context
     let ctx = gameCanvas.context;
 
-
     // draw it
     let foodprops = FOOD_MENU[this.type];
 
     p = this.pos;
-    x = p.x - foodprops.width / 2;
-    y = p.y - foodprops.height / 2;
+    w = foodprops.width;
+    h = foodprops.height;
+    // x, y here is the upper left corner, not the center, in grid coordinates, of the sprite to be drawn
+    x = p.x - w / 2;
+    y = p.y - h / 2;
     ctx.drawImage(this.image, x * GRID_SCALE, y * GRID_SCALE, foodprops.width * GRID_SCALE, foodprops.height * GRID_SCALE);
 
     // if wraparound, draw again
     wrapdx = 0;
     wrapdy = 0;
-    if (x + foodprops.width / 2 > GRID_WIDTH) {
+    if (x + w >= GRID_WIDTH) {
       wrapdx = -GRID_WIDTH * GRID_SCALE;
+    } else if (x < 0) {
+      wrapdx = GRID_WIDTH * GRID_SCALE;
     }
-    if (y + foodprops.height / 2 > GRID_HEIGHT) {
+    if (y + h >= GRID_HEIGHT) {
       wrapdy = -GRID_HEIGHT * GRID_SCALE;
+    } else if (y < 0) {
+      wrapdy = GRID_HEIGHT * GRID_SCALE;
     }
     if (wrapdx) {
       ctx.translate(wrapdx, 0);
