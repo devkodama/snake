@@ -799,7 +799,7 @@ class _DebugInfo {
       let ctx = gameCanvas.context;
 
       ctx.font = '12 pt Arial';
-      ctx.fillStyle = 'purple';
+      ctx.fillStyle = 'red';
 
       ctx.fillText(this.text, this.pos.x, this.pos.y);
 
