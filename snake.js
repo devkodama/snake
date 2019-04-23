@@ -867,6 +867,13 @@ class Controller {
         default:
           return null;
       }
+      {
+        let ctx = gameCanvas.context;
+
+        ctx.font = "16 pt Arial";
+        ctx.fillStyle = "blue";
+        ctx.fillText( 'x' + this.touchx + ', y' + this.touchy, gameController.touchx, gameController.touchy);
+      }
 
     } else if (this.touchx >= 0 && this.touchy >= 0) {
       {
