@@ -909,22 +909,12 @@ class Controller {
       debugDisplay.print('hx,hy; tx,ty; dx,dy; cdir = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y) + '; ' + Math.round(this.touchx/ GRID_SCALE) + ', ' + Math.round(this.touchy/ GRID_SCALE) + '; ' + Math.round(dx*10)/10 + ', ' + Math.round(dy*10)/10 + '; ' + this.currentdirection);
 
       // reset touch after responding to it
-//      this.touchx = -1;
-//      this.touchy = -1;
-gameController.newTouch = false;
+      gameController.newTouch = false;
 
-      if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx >= 0) {
-          this.currentdirection = RIGHT;
-        } else {
-          this.currentdirection = LEFT;
-        }
-      } else {
-        if (dy >= 0) {
-          this.currentdirection = DOWN;
-        } else {
-          this.currentdirection = UP;
-        }
+      if (this.currentdirection == UP || this.currentdirection == DOWN) {
+        this.currentdirection = (dx >= 0) ? RIGHT : LEFT;
+      } else if (this.currentdirection == LEFT || this.currentdirection == RIGHT) {
+        this.currentdirection = (dy >= 0) ? DOWN : UP;
       }
 
     }
