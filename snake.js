@@ -15,6 +15,7 @@ var playerScore;
 var foodItems;
 var gotItemSound;
 var playerDeadSound;
+var debugDisplay;
 
 
 //
@@ -94,6 +95,8 @@ const KEY_DOWN_ARROW = 40;
 const KEY_LEFT_ARROW = 37;
 const KEY_RIGHT_ARROW = 39;
 
+// Debug constants
+const DEBUG_COLOR = "purple";
 
 
 
@@ -777,6 +780,34 @@ class Score {
 }
 
 
+// Debug info display class
+
+class _DebugInfo {
+
+    constructor (x, y) {
+      this.pos = new Point(x, y);
+      this.text = '';
+    }
+
+    print (text = null) {
+
+      if (text) {
+        this.text = text;
+      }
+
+      // get the canvas context
+      let ctx = gameCanvas.context;
+
+      ctx.font = '12 pt Arial';
+      ctx.fillStyle = 'purple';
+
+      ctx.fillText(this.text, this.pos.x, this.pos.y);
+
+    }
+
+}
+
+
 
 
 // GameGrid class for the game board
@@ -844,6 +875,8 @@ class Controller {
 
     if (this.lastkey) {
 
+      debugDisplay.print("lastkey = " + this.lastkey);
+
       switch (this.lastkey) {
         case 'ArrowUp':
           return UP;
@@ -867,9 +900,11 @@ class Controller {
       dx = playerSnake.body[0].x - this.touchx / GRID_SCALE;
       dy = playerSnake.body[0].y - this.touchy / GRID_SCALE;
 
+      debugDisplay.print('hx,hy = ' + playerSnake.body[0].x + ', ' + playerSnake.body[0].y);
+
       // reset touch after responding to it
-      this.touchx = -1;
-      this.touchy = -1;
+//      this.touchx = -1;
+//      this.touchy = -1;
 
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) {
@@ -964,6 +999,9 @@ function gameTick () {
         }
         playerSnake.draw();
         playerScore.draw();
+
+        debugDisplay.print();
+
       }
 
       break;
@@ -984,7 +1022,7 @@ function gameTick () {
 function startPressed() {
 
   // initialize audio for mobile browsers
-  console.log("Start pressed down...")
+  console.log("Start pressed down...");
   document.getElementById('eat').play();
   document.getElementById('eat').pause();
 
@@ -994,8 +1032,8 @@ function startPressed() {
 // This is called by the browser when START button is released
 function startGame() {
 
-  console.log("Game started...")
-
+  console.log("Game started...");
+  debugDisplay.print('Start released...');
   // put game in attract mode
   gameCanvas.status = PLAY;
 
@@ -1009,6 +1047,7 @@ function initializeGame() {
 
   // create game canvas
   console.log("Creating game canvas...")
+
   gameCanvas = new Canvas();
   gameCanvas.clear();
 
@@ -1049,6 +1088,9 @@ function initializeGame() {
   // load sounds
   gotItemSound = new Sound('eat', 'assets/eat.wav');
   playerDeadSound = new Sound('die', 'assets/die.wav');
+
+  // Create debug info object
+  debugDisplay = new _DebugInfo(50,70);
 
   // Create score Object
   playerScore = new Score();
