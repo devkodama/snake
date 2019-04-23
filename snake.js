@@ -17,7 +17,7 @@ var gotItemSound;
 
 
 //
-const UPDATE_INTERVAL = 25;      // in milliseconds
+const UPDATE_INTERVAL = 20;      // in milliseconds
 
 // Canvas is in screen pixels
 const CANVAS_WIDTH = 960;
@@ -59,7 +59,7 @@ const FOOD_MENU = {
   "kk_coffee_cup": { width: 1, height: 1.5, points: 50 },
 };
 const FOOD_GRID_SPACING = 0.2;
-const FOOD_RATE = 0.05;
+const FOOD_RATE = 0.25;
 
 
 // Snake and food statuses
@@ -369,49 +369,64 @@ class Snake {
 
 
   // check for collision of snake head with snake body
-  collideWithSelf(item) {
+  // allow 20% radius overlap before calling it a collision
+  collideWithSelf() {
     let head;
-    let itemprops;
+    let body;
+    let necksteps;
+
     let hx, hy;
-    let fx, fy;
+    let hr;
+    let bx, by;
+    let br;
+    let dx, dy;
     let posx0, posy0;
     let posx1, posy1;
 
-    if (item.status == EATEN) {
-      console.log('warning: checking for collision with already eaten item')
-      return false;
+    const RADIUS_OVERLAP = 0.2;
+
+    // "neck" is the number of body segments behind the head to start checking for collisions
+    // (otherwise head would always collide with the first body segment)
+    necksteps = (SNAKE_WIDTH + 1) / SNAKE_VELOCITY_SCALE + 1;
+    if (necksteps > this.length) {
+      console.log("error: neck is longer than snake length");
     }
 
     // (posx0, posy0) and (posx1, posy1) define a bounding box within which the
-    // food item location (origin) must fall to collide
-
-    itemprops = FOOD_MENU[item.type];
-    fx = item.pos.x;
-    fy = item.pos.y;
-
+    // body segment location must fall to collide
+    // don't check the last half of the tail, allow head to pass over it
     head = this.body[0];
-    hx = head.x - this.width / 2;
-    hy = head.y - this.width / 2;
+    hr = RADIUS_OVERLAP * this.width / 2;
+    hx = head.x;
+    hy = head.y;
 
-    if (hx < 1 && fx >= GRID_WIDTH - 1) {
-      fx -= GRID_WIDTH;
-    }
-    if (hy < 1 && fy >= GRID_HEIGHT - 1) {
-      fy -= GRID_HEIGHT;
-    }
-    if (hx >= GRID_WIDTH - 1 && fx < 1) {
-      fx += GRID_WIDTH;
-    }
-    if (hy >= GRID_HEIGHT - 1 && fy < 1) {
-      fy += GRID_HEIGHT;
-    }
-    posx0 = hx - itemprops.width;
-    posx1 = hx + this.width;
-    posy0 = hy - itemprops.height;
-    posy1 = hy + this.width;
+    for (let i = necksteps; i < this.body.length - (SNAKE_TAIL_LENGTH / SNAKE_VELOCITY_SCALE) / 2; i++) {
 
-    if (fx > posx0 && fx < posx1 && fy > posy0 && fy < posy1) {
+      body = this.body[i];
+      br = RADIUS_OVERLAP * SNAKE_WIDTH / 2;
+      bx = body.x;
+      by = body.y;
+
+      if (hx < hr && bx >= GRID_WIDTH - (br + hr)) {
+        bx -= GRID_WIDTH;
+      }
+      if (hx >= GRID_WIDTH - (hr + br) && bx < br) {
+        bx += GRID_WIDTH;
+      }
+      if (hy < hr && by >= GRID_HEIGHT - (br + hr)) {
+        by -= GRID_HEIGHT;
+      }
+      if (hy >= GRID_HEIGHT - (hr + br) && by < br) {
+        by += GRID_HEIGHT;
+      }
+
+      dx = Math.abs(bx - hx);
+      dy = Math.abs(by - hy);
+
+      if (dx < (hr + br) && dy < (hr + br)) {
         return true;
+      }
+
     }
 
     // No collision detected, return false
@@ -728,43 +743,54 @@ class Controller {
 function gameTick () {
   let points;
 
-  // Update existing food items
-  for (let i=0; i<foodItems.length; i++) {
-    foodItems[i].update();
-  }
 
-  // Add some new food items randomly
-  if (Math.random() < FOOD_RATE ) {
-    foodItems.push(new Food());
-  }
+  if (playerSnake.status != DEAD) {
 
-  // Use controller input to change snake direction
-  playerSnake.steer(gameController.direction());
-
-  // Update snake position
-  playerSnake.update();
-
-  // check for snake collisions with items in foodItems
-  for (let i=0; i<foodItems.length; i++) {
-    if (playerSnake.collideWithFood(foodItems[i])) {
-      points = foodItems[i].eat();
-      playerScore.add(points);
-      playerSnake.growthenergy += points/10;
-
-      // remove the eaten item from foodItems array
-      foodItems.splice(i,1);
-
-//      console.log(playerScore, playerSnake.growthenergy);
+    // Update existing food items
+    for (let i=0; i<foodItems.length; i++) {
+      foodItems[i].update();
     }
-  }
 
-  // Refresh canvas
-  gameCanvas.clear();
-  for (let i=0; i<foodItems.length; i++) {
-    foodItems[i].draw();
+    // Add some new food items randomly
+    if (Math.random() < FOOD_RATE ) {
+      foodItems.push(new Food());
+    }
+
+    // Use controller input to change snake direction
+    playerSnake.steer(gameController.direction());
+
+    // Update snake position
+    playerSnake.update();
+
+    // check for snake collision with self
+    if (playerSnake.collideWithSelf()) {
+      playerDiedSound.play();
+      playerSnake.status = DEAD;
+    }
+
+    // check for snake collisions with items in foodItems
+    for (let i=0; i<foodItems.length; i++) {
+      if (playerSnake.collideWithFood(foodItems[i])) {
+        points = foodItems[i].eat();
+        playerScore.add(points);
+        playerSnake.growthenergy += points/10;
+
+        // remove the eaten item from foodItems array
+        foodItems.splice(i,1);
+
+  //      console.log(playerScore, playerSnake.growthenergy);
+      }
+    }
+
+    // Refresh canvas
+    gameCanvas.clear();
+    for (let i=0; i<foodItems.length; i++) {
+      foodItems[i].draw();
+    }
+    playerSnake.draw();
+    playerScore.draw();
+
   }
-  playerSnake.draw();
-  playerScore.draw();
 
 }
 
@@ -794,7 +820,8 @@ function startGame() {
   })
 
   // load sounds
-  gotItemSound = new Sound('gotitem', 'assets/eat.wav');
+  gotItemSound = new Sound('eat', 'assets/eat.wav');
+  playerDiedSound = new Sound('die', 'assets/die.wav');
 
   // Create score Object
   playerScore = new Score();
