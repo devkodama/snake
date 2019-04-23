@@ -1032,7 +1032,7 @@ function initializeGame() {
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
     if (gameCanvas.status == PLAY) {
-    //  e.preventDefault();
+      e.preventDefault();
     }
 
   });
@@ -1040,7 +1040,7 @@ function initializeGame() {
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
     if (gameCanvas.status == PLAY) {
-//      e.preventDefault();
+      e.preventDefault();
     }
 
   });
