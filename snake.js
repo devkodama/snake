@@ -1045,27 +1045,13 @@ function initializeGame() {
     if (gameCanvas.status == PLAY) {
     //  e.preventDefault();
     }
-    {
-      let ctx = gameCanvas.context;
-
-      ctx.font = "12 pt Arial";
-      ctx.fillStyle = "orange";
-      ctx.fillText( 'x ' + gameController.touchx + 'y ' + gameController.touchy, gameController.touchx, gameController.touchy);
-    }
 
   });
   window.addEventListener('touchmove', function (e) {
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
     if (gameCanvas.status == PLAY) {
-      e.preventDefault();
-    }
-    {
-      let ctx = gameCanvas.context;
-
-      ctx.font = "12 pt Arial";
-      ctx.fillStyle = "green";
-      ctx.fillText( 'x' + gameController.touchx + ', y' + gameController.touchy, gameController.touchx, gameController.touchy);
+//      e.preventDefault();
     }
 
   });
