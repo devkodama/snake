@@ -869,6 +869,7 @@ class Controller {
     this.touchx = -1;
     this.touchy = -1;
     this.newTouch = false;
+    this.direction = null;
   }
 
   direction () {
@@ -880,19 +881,19 @@ class Controller {
 
       switch (this.lastkey) {
         case 'ArrowUp':
-          return UP;
+          this.direction = UP;
           break;
         case 'ArrowDown':
-          return DOWN;
+          this.direction = DOWN;
           break;
         case 'ArrowLeft':
-          return LEFT;
+          this.direction = LEFT;
           break;
         case 'ArrowRight':
-          return RIGHT;
+          this.direction = RIGHT;
           break;
         default:
-          return null;
+          this.direction = null;
       }
 
     } else if (this.newTouch) {
@@ -901,8 +902,8 @@ class Controller {
 //      this.touchy = 400;
 
       // calculate direction based on vector from snake's head
-      dx = playerSnake.body[0].x - this.touchx / GRID_SCALE;
-      dy = playerSnake.body[0].y - this.touchy / GRID_SCALE;
+      dx = this.touchx / GRID_SCALE - playerSnake.body[0].x;
+      dy = this.touchy / GRID_SCALE - playerSnake.body[0].y;
 
 //      debugDisplay.print('hx,hy = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y));
       debugDisplay.print('hx,hy; tx,ty; dx,dy = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y) + '; ' + Math.round(this.touchx/ GRID_SCALE) + ', ' + Math.round(this.touchy/ GRID_SCALE) + '; ' + dx + ', ' + dy);
@@ -912,28 +913,25 @@ class Controller {
 //      this.touchy = -1;
 gameController.newTouch = false;
 
-
       if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx < 0) {
+        if (dx >= 0) {
 //          this.lastkey = 'ArrowRight';
-          return RIGHT;
+          this.direction = RIGHT;
         } else {
 //          this.lastkey = 'ArrowLeft';
-          return LEFT;
+          this.direction = LEFT;
         }
       } else {
-        if (dy > 0) {
+        if (dy >= 0) {
 //          this.lastkey = 'ArrowDown';
-          return DOWN;
+          this.direction = UP;
         } else {
 //          this.lastkey = 'ArrowUp';
-          return UP;
+          this.direction = DOWN;
         }
       }
 
-    } else {
-
-      return null;
+      return this.direction;
 
     }
 
