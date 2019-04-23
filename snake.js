@@ -952,7 +952,7 @@ function startPressed() {
 
 // This is called by the browser when START button is released
 function startGame() {
-  
+
   console.log("Game started...")
 
   // put game in attract mode
@@ -985,7 +985,7 @@ function initializeGame() {
   })
 
   // load sounds
-  gotItemSound = new Sound('eat', 'assets/eat.mp3');
+  gotItemSound = new Sound('eat', 'assets/eat.wav');
   playerDeadSound = new Sound('die', 'assets/die.wav');
 
   // Create score Object
