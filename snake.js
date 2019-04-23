@@ -952,6 +952,14 @@ function gameTick () {
         playerScore.draw();
       }
 
+      {
+        let ctx = gameCanvas.context;
+
+        ctx.font = "12 pt Arial";
+        ctx.fillStyle = "blue";
+        ctx.fillText( 'touchx ' + gameController.touchx + ', touchy ' + gameController.touchy, CANVAS_WIDTH / 2 - 50, CANVAS_HEIGHT / 2);
+      }
+
       break;
 
     case ATTRACT:
