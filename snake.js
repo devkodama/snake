@@ -1027,7 +1027,9 @@ function initializeGame() {
     gameController.lastkey = null;
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
-    e.preventDefault();
+    if (gameCanvas.status == PLAY) {
+      e.preventDefault();
+    }
     {
       let ctx = gameCanvas.context;
 
@@ -1042,7 +1044,9 @@ function initializeGame() {
     gameController.lastkey = null;
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
-    e.preventDefault();
+    if (gameCanvas.status == PLAY) {
+      e.preventDefault();
+    }
     {
       let ctx = gameCanvas.context;
 
