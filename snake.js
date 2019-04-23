@@ -901,7 +901,7 @@ class Controller {
       dy = playerSnake.body[0].y - this.touchy / GRID_SCALE;
 
 //      debugDisplay.print('hx,hy = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y));
-      debugDisplay.print('tx,ty = ' + Math.round(this.touchx) + ', ' + Math.round(this.touchx));
+      debugDisplay.print('tx,ty = ' + Math.round(this.touchx/ GRID_SCALE) + ', ' + Math.round(this.touchx/ GRID_SCALE));
 
       // reset touch after responding to it
 //      this.touchx = -1;
