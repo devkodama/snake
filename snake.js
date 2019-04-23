@@ -895,7 +895,7 @@ class Controller {
           return null;
       }
 
-    } else if this.newTouch) {
+    } else if (this.newTouch) {
 
       // calculate direction based on vector from snake's head
       dx = playerSnake.body[0].x - this.touchx / GRID_SCALE;
