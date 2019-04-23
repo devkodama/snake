@@ -842,18 +842,7 @@ class Controller {
   direction () {
     let dx, dy;
 
-    {
-      let ctx = gameCanvas.context;
-
-      ctx.font = "12 pt Arial";
-      ctx.fillStyle = "orange";
-      ctx.fillText( 'x' + this.touchx + ', y' + this.touchy, gameController.touchx, gameController.touchy);
-    }
-
     if (this.lastkey) {
-      dx = playerSnake.body[0].x - 332 / GRID_SCALE;
-      dy = playerSnake.body[0].y - 308 / GRID_SCALE;
-
 
       switch (this.lastkey) {
         case 'ArrowUp':
@@ -873,17 +862,14 @@ class Controller {
       }
 
     } else if (this.touchx >= 0 && this.touchy >= 0) {
-      {
-        let ctx = gameCanvas.context;
-
-        ctx.font = "12 pt Arial";
-        ctx.fillStyle = "green";
-        ctx.fillText( 'b', gameController.touchx, gameController.touchy);
-      }
 
       // calculate direction based on vector from snake's head
       dx = playerSnake.body[0].x - this.touchx / GRID_SCALE;
       dy = playerSnake.body[0].y - this.touchy / GRID_SCALE;
+
+      // reset touch after responding to it
+      this.touchx = -1;
+      this.touchy = -1;
 
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) {
@@ -899,9 +885,9 @@ class Controller {
         }
       }
 
-      // reset touch after responding to it
-      this.touchx = -1;
-      this.touchy = -1;
+    } else {
+
+      return null;
 
     }
 
