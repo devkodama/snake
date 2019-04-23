@@ -1033,8 +1033,6 @@ function initializeGame() {
     gameController.touchy = -1;
   });
   window.addEventListener('touchstart', function (e) {
-    gameController.prevkey = gameController.lastkey;
-    gameController.lastkey = null;
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
     if (gameCanvas.status == PLAY) {
@@ -1050,8 +1048,6 @@ function initializeGame() {
 
   });
   window.addEventListener('touchmove', function (e) {
-    gameController.prevkey = gameController.lastkey;
-    gameController.lastkey = null;
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
     if (gameCanvas.status == PLAY) {
