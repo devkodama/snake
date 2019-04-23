@@ -834,25 +834,50 @@ class Controller {
     this.key = [];
     this.lastkey = null;
     this.prevkey = null;
-
+    this.touchx = -1;
+    this.touchy = -1;
   }
 
   direction () {
-    switch (this.lastkey) {
-      case 'ArrowUp':
-        return UP;
-        break;
-      case 'ArrowDown':
-        return DOWN;
-        break;
-      case 'ArrowLeft':
-        return LEFT;
-        break;
-      case 'ArrowRight':
-        return RIGHT;
-        break;
-      default:
-        return null;
+    if (this.lastkey) {
+
+      switch (this.lastkey) {
+        case 'ArrowUp':
+          return UP;
+          break;
+        case 'ArrowDown':
+          return DOWN;
+          break;
+        case 'ArrowLeft':
+          return LEFT;
+          break;
+        case 'ArrowRight':
+          return RIGHT;
+          break;
+        default:
+          return null;
+      }
+
+    } else if (this.touchx >= 0 && this.touchy >= 0) {
+      console.log(this.touchx, this.touchy);
+
+      // calculate direction based on vector from snake's head
+      dx = playerSnake.body[0].pos.x - this.touchx;
+      dy = playerSnake.body[0].pos.y - this.touchy;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0) {
+          return RIGHT;
+        } else {
+          return LEFT;
+        }
+      } else {
+        if (dy > 0) {
+          return DOWN;
+        } else {
+          return UP;
+        }
+      }
+
     }
   }
 
@@ -974,15 +999,34 @@ function initializeGame() {
   // Create game controller object
   gameController = new Controller();
 
-  // Add event listeners for key presses
+  // Add event listeners for key presses and screen touches
   window.addEventListener('keydown', function (e) {
     gameController.key[e.keyCode] = true;
     gameController.prevkey = gameController.lastkey;
     gameController.lastkey = e.key;
+    gameController.touchx = -1;
+    gameController.touchy = -1;
   })
   window.addEventListener('keyup', function (e) {
     gameController.key[e.keyCode] = false;
+    gameController.touchx = -1;
+    gameController.touchy = -1;
   })
+  window.addEventListener('touchstart', function (e) {
+    gameController.prevkey = gameController.lastkey;
+    gameController.lastkey = null;
+    gameController.touchx = e.touches[0].pageX - canvas.offsetLeft;
+    gameController.touchy = e.touches[0].pageY - canvas.offsetTop;
+    e.preventDefault();
+  })
+  window.addEventListener('touchmove', function (e) {
+    gameController.prevkey = gameController.lastkey;
+    gameController.lastkey = null;
+    gameController.touchx = e.touches[0].pageX - canvas.offsetLeft;
+    gameController.touchy = e.touches[0].pageY - canvas.offsetTop;
+    e.preventDefault();
+  })
+
 
   // load sounds
   gotItemSound = new Sound('eat', 'assets/eat.wav');
