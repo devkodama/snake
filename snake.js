@@ -915,19 +915,15 @@ gameController.newTouch = false;
 
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx >= 0) {
-//          this.lastkey = 'ArrowRight';
           this.currentdirection = RIGHT;
         } else {
-//          this.lastkey = 'ArrowLeft';
           this.currentdirection = LEFT;
         }
       } else {
         if (dy >= 0) {
-//          this.lastkey = 'ArrowDown';
-          this.currentdirection = UP;
-        } else {
-//          this.lastkey = 'ArrowUp';
           this.currentdirection = DOWN;
+        } else {
+          this.currentdirection = UP;
         }
       }
 
