@@ -77,6 +77,10 @@ const DEAD = 0;
 const ALIVE = 1;
 const EATEN = 2;
 
+// game status modes
+const ATTRACT = 0;
+const PLAY = 1;
+
 // Misc constants
 const UP = 0;
 const RIGHT = 1;
@@ -802,10 +806,12 @@ class Canvas {
     this.canvas.width = CANVAS_WIDTH;
     this.canvas.height = CANVAS_HEIGHT;
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+
     // load background image
     this.backgroundimage = new Image();
     this.backgroundimage.src = "assets/background.png"
 
+    this.status = ATTRACT;
   }
 
   // erase the canvas and draw background
@@ -857,71 +863,92 @@ class Controller {
 function gameTick () {
   let points;
 
+  switch (gameCanvas.status ) {
 
-  if (playerSnake.status != DEAD) {
+    case PLAY:
+      // game in play
 
-    // Update existing food items
-    for (let i=0; i<foodItems.length; i++) {
-      foodItems[i].update();
-    }
+      if (playerSnake.status != DEAD) {
 
-    // Add some new food items randomly
-    if (Math.random() < FOOD_RATE ) {
-      foodItems.push(new Food());
-    }
+        // Update existing food items
+        for (let i=0; i<foodItems.length; i++) {
+          foodItems[i].update();
+        }
 
-    // Use controller input to change snake direction
-    playerSnake.steer(gameController.direction());
+        // Add some new food items randomly
+        if (Math.random() < FOOD_RATE ) {
+          foodItems.push(new Food());
+        }
 
-    // Update snake position
-    playerSnake.update();
+        // Use controller input to change snake direction
+        playerSnake.steer(gameController.direction());
 
-    // check for snake collision with self
-    if (playerSnake.collideWithSelf()) {
-      playerDeadSound.play();
-      playerSnake.status = DEAD;
-    }
+        // Update snake position
+        playerSnake.update();
 
-    // check for snake collisions with items in foodItems
-    for (let i = 0; i < foodItems.length; i++) {
-      if (playerSnake.collideWithFood(foodItems[i])) {
-        points = foodItems[i].eat();
-        playerScore.add(points * SCORE_MULTIPLIER[playerSnake.speed]);
-        playerSnake.growthenergy += foodItems[i].energy;
+        // check for snake collision with self
+        if (playerSnake.collideWithSelf()) {
+          playerDeadSound.play();
+          playerSnake.status = DEAD;
+        }
 
-        // handle speedup
-        let speedup = foodItems[i].speedup;
-        let duration = foodItems[i].speedupduration;
-        if (speedup > 0) {
-          if (playerSnake.speed > speedup) {
-            playerSnake.speed -= speedup;
-            setTimeout( () => { playerSnake.speed += speedup; }, duration);
+        // check for snake collisions with items in foodItems
+        for (let i = 0; i < foodItems.length; i++) {
+          if (playerSnake.collideWithFood(foodItems[i])) {
+            points = foodItems[i].eat();
+            playerScore.add(points * SCORE_MULTIPLIER[playerSnake.speed]);
+            playerSnake.growthenergy += foodItems[i].energy;
+
+            // handle speedup
+            let speedup = foodItems[i].speedup;
+            let duration = foodItems[i].speedupduration;
+            if (speedup > 0) {
+              if (playerSnake.speed > speedup) {
+                playerSnake.speed -= speedup;
+                setTimeout( () => { playerSnake.speed += speedup; }, duration);
+              }
+            }
+
+            // remove the eaten item from foodItems array -  this has to be done last
+            foodItems.splice(i,1);
           }
         }
 
-        // remove the eaten item from foodItems array -  this has to be done last
-        foodItems.splice(i,1);
+        // Refresh canvas
+        gameCanvas.clear();
+        for (let i=0; i<foodItems.length; i++) {
+          foodItems[i].draw();
+        }
+        playerSnake.draw();
+        playerScore.draw();
       }
-    }
 
-    // Refresh canvas
-    gameCanvas.clear();
-    for (let i=0; i<foodItems.length; i++) {
-      foodItems[i].draw();
-    }
-    playerSnake.draw();
-    playerScore.draw();
+      break;
+
+    case ATTRACT:
+    default:
+      // game in attract mode
+
+      break;
 
   }
+
+}
+
+// This is called by the browser when START button is pressed to start the game
+function startGame() {
+
+  console.log("Start button pressed...")
+  // put game in attract mode
+  gameCanvas.status = PLAY;
 
 }
 
 
 
 
-// This is called by the browser to start the game
-
-function startGame() {
+// This is called by the browser when the html is loaded
+function initializeGame() {
 
   // create game canvas
   console.log("Creating game canvas...")
@@ -955,6 +982,9 @@ function startGame() {
 
   // Create global foodItems array
   foodItems = [];
+
+  // put game in attract mode
+  gameCanvas.status = ATTRACT;
 
   // Start game loop
   gameCanvas.interval = setInterval(gameTick, UPDATE_INTERVAL);
