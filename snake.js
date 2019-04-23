@@ -17,7 +17,7 @@ var gotItemSound;
 
 
 //
-const UPDATE_INTERVAL = 20;      // in milliseconds
+const UPDATE_INTERVAL = 2;      // in milliseconds
 
 // Canvas is in screen pixels
 const CANVAS_WIDTH = 960;
@@ -36,12 +36,17 @@ const SCORE_COLOR = 'black';
 const SNAKE_COLOR = 'green';
 const SNAKE_HEAD_COLOR = 'blue';
 const SNAKE_BODY_COLOR = 'green';
-const SNAKE_WIDTH = 0.8;    // in grid units
-const SNAKE_LENGTH = 8;     // in grid units
+const SNAKE_TAIL_COLOR = "red";
+const SNAKE_HEAD_WIDTH = 0.8;   // in grid units
+const SNAKE_BODY_WIDTH = 0.7;   // in grid units
 const SNAKE_TAIL_WIDTH = 0.2    // in grid units
+const SNAKE_LENGTH = 8;         // in grid units
 const SNAKE_TAIL_LENGTH = 4     // in grid units
-const SNAKE_TURNING_RADIUS = 1;   // in grid units
-const SNAKE_VELOCITY_SCALE = 0.1; // in grid units
+const SNAKE_TURNING_RADIUS = 1;     // in grid units
+const SNAKE_VELOCITY_SCALE = 0.2;   // in grid units
+const SNAKE_RADIUS_OVERLAP = 0.8;   // in grid units
+const SNAKE_SPEED_INITIAL = 10;   // in arbitray units
+const SNAKE_SPEED_MAX = 1;        // in arbitray units
 
 // Food constants
 //   width and height are dimensions of food item in grid units
@@ -58,9 +63,9 @@ const FOOD_MENU = {
   "donut_strawberry_coconut": { width: 1, height: 1, points: 10 },
   "kk_coffee_cup": { width: 1, height: 1.5, points: 50 },
 };
-const FOOD_GRID_SPACING = 0.2;
-const FOOD_RATE = 0.25;
-
+const FOOD_GRID_SPACING = 0.2;    // in grid units
+const FOOD_OVERLAP = 0.9;     // in grid units
+const FOOD_RATE = 0.05;       // percentage chance of a new food item each game tick
 
 // Snake and food statuses
 const DEAD = 0;
@@ -172,11 +177,15 @@ class Snake {
     this.color = SNAKE_COLOR;
     this.headcolor = SNAKE_HEAD_COLOR;
     this.bodycolor = SNAKE_BODY_COLOR;
-    this.width = SNAKE_WIDTH;
+    this.tailcolor = SNAKE_TAIL_COLOR;
+    this.headwidth = SNAKE_HEAD_WIDTH;
+    this.bodywidth = SNAKE_BODY_WIDTH;
     this.status = ALIVE;
     this.justturned = false;
     this.turndelay = 0;   // countdown number of steps until next turn can be made
     this.growthenergy = 0;
+    this.speed = SNAKE_SPEED_INITIAL;
+    this.movedelay = this.speed;   // countdown number of steps until next snake step can be made
 
     // array of Points representing the coordinates of each body segment
     // body[0] is the snake head position
@@ -290,6 +299,15 @@ class Snake {
   update(grow = false) {
     let newPoint;
 
+    // only allow move when movedelay counter reaches zero
+    if (this.movedelay > 0) {
+      this.movedelay--;
+      return;
+    }
+
+    // restart move delay counter
+    this.movedelay = this.speed;
+
     // if we just turned, flag the turn point
     if (this.justturned) {
       this.justturned = false;
@@ -322,45 +340,45 @@ class Snake {
     let head;
     let itemprops;
     let hx, hy;
+    let hr;
     let fx, fy;
-    let posx0, posy0;
-    let posx1, posy1;
+    let frw, frh;
+    let dx, dy;
 
     if (item.status == EATEN) {
       console.log('warning: checking for collision with already eaten item')
       return false;
     }
 
-    // (posx0, posy0) and (posx1, posy1) define a bounding box within which the
-    // food item location (origin) must fall to collide
+    head = this.body[0];
+    hx = head.x;
+    hy = head.y;
+    hr = SNAKE_RADIUS_OVERLAP * this.headwidth / 2;
 
     itemprops = FOOD_MENU[item.type];
     fx = item.pos.x;
     fy = item.pos.y;
+    frw = FOOD_OVERLAP * itemprops.width / 2;
+    frh = FOOD_OVERLAP * itemprops.height / 2;
 
-    head = this.body[0];
-    hx = head.x - this.width / 2;
-    hy = head.y - this.width / 2;
-
-    if (hx < 1 && fx >= GRID_WIDTH - 1) {
+    if (hx < hr && fx >= GRID_WIDTH - (frw + hr)) {
       fx -= GRID_WIDTH;
     }
-    if (hy < 1 && fy >= GRID_HEIGHT - 1) {
-      fy -= GRID_HEIGHT;
-    }
-    if (hx >= GRID_WIDTH - 1 && fx < 1) {
+    if (hx >= GRID_WIDTH - (hr + frw) && fx < frw) {
       fx += GRID_WIDTH;
     }
-    if (hy >= GRID_HEIGHT - 1 && fy < 1) {
+    if (hy < hr && fy >= GRID_HEIGHT - (frh + hr)) {
+      fy -= GRID_HEIGHT;
+    }
+    if (hy >= GRID_HEIGHT - (hr + frh) && fy < frh) {
       fy += GRID_HEIGHT;
     }
-    posx0 = hx - itemprops.width;
-    posx1 = hx + this.width;
-    posy0 = hy - itemprops.height;
-    posy1 = hy + this.width;
 
-    if (fx > posx0 && fx < posx1 && fy > posy0 && fy < posy1) {
-        return true;
+    dx = Math.abs(fx - hx);
+    dy = Math.abs(fy - hy);
+
+    if (dx < (hr + frw) && dy < (hr + frh)) {
+      return true;
     }
 
     // No collision detected, return false
@@ -369,7 +387,7 @@ class Snake {
 
 
   // check for collision of snake head with snake body
-  // allow 20% radius overlap before calling it a collision
+  // allow overlap of SNAKE_RADIUS_OVERLAP percentage before calling it a collision
   collideWithSelf() {
     let head;
     let body;
@@ -380,14 +398,10 @@ class Snake {
     let bx, by;
     let br;
     let dx, dy;
-    let posx0, posy0;
-    let posx1, posy1;
-
-    const RADIUS_OVERLAP = 0.2;
 
     // "neck" is the number of body segments behind the head to start checking for collisions
     // (otherwise head would always collide with the first body segment)
-    necksteps = (SNAKE_WIDTH + 1) / SNAKE_VELOCITY_SCALE + 1;
+    necksteps = (SNAKE_BODY_WIDTH + 1) / SNAKE_VELOCITY_SCALE + 1;
     if (necksteps > this.length) {
       console.log("error: neck is longer than snake length");
     }
@@ -396,16 +410,16 @@ class Snake {
     // body segment location must fall to collide
     // don't check the last half of the tail, allow head to pass over it
     head = this.body[0];
-    hr = RADIUS_OVERLAP * this.width / 2;
     hx = head.x;
     hy = head.y;
+    hr = SNAKE_RADIUS_OVERLAP * this.headwidth / 2;
 
-    for (let i = necksteps; i < this.body.length - (SNAKE_TAIL_LENGTH / SNAKE_VELOCITY_SCALE) / 2; i++) {
+    for (let i = Math.floor(necksteps); i < this.body.length - (SNAKE_TAIL_LENGTH / SNAKE_VELOCITY_SCALE) / 2; i++) {
 
       body = this.body[i];
-      br = RADIUS_OVERLAP * SNAKE_WIDTH / 2;
       bx = body.x;
       by = body.y;
+      br = SNAKE_RADIUS_OVERLAP * SNAKE_BODY_WIDTH / 2;
 
       if (hx < hr && bx >= GRID_WIDTH - (br + hr)) {
         bx -= GRID_WIDTH;
@@ -502,16 +516,22 @@ class Snake {
     // drawn as a series of circles with tapered tail
     widthtotalsteps = SNAKE_TAIL_LENGTH / SNAKE_VELOCITY_SCALE;
     widthcurrentstep = SNAKE_TAIL_LENGTH / SNAKE_VELOCITY_SCALE;
-    tailwidthdiff = this.width - SNAKE_TAIL_WIDTH;
+    tailwidthdiff = this.bodywidth - SNAKE_TAIL_WIDTH;
+
     for (let i = this.body.length - 1; i > 0; i--) {
       pos = this.body[i];
-      _drawWithWrap(pos, this.width - tailwidthdiff * (widthcurrentstep / widthtotalsteps), this.bodycolor);
-      widthcurrentstep -= 1;
-      if (widthcurrentstep <0) {
-        widthcurrentstep = 0;
+      if (widthcurrentstep > 0) {
+        widthcurrentstep -= 1;
+        if (widthcurrentstep > widthtotalsteps * 2 / 3) {
+          _drawWithWrap(pos, this.bodywidth - tailwidthdiff * (widthcurrentstep / widthtotalsteps), this.tailcolor);
+        } else {
+          _drawWithWrap(pos, this.bodywidth - tailwidthdiff * (widthcurrentstep / widthtotalsteps), this.bodycolor);
+        }
+      } else {
+        _drawWithWrap(pos, this.bodywidth, this.bodycolor);
       }
     }
-    _drawWithWrap(this.body[0], this.width, this.headcolor);
+    _drawWithWrap(this.body[0], this.headwidth, this.headcolor);
 
   }
 
@@ -579,6 +599,7 @@ class Food {
 
   // draw the food item on the global game canvas
   // only draw active items
+  // item is centered at x, y position
   draw() {
     let p;
     let x, y;
@@ -597,17 +618,17 @@ class Food {
     let foodprops = FOOD_MENU[this.type];
 
     p = this.pos;
-    x = p.x;
-    y = p.y;
+    x = p.x - foodprops.width / 2;
+    y = p.y - foodprops.height / 2;
     ctx.drawImage(this.image, x * GRID_SCALE, y * GRID_SCALE, foodprops.width * GRID_SCALE, foodprops.height * GRID_SCALE);
 
     // if wraparound, draw again
     wrapdx = 0;
     wrapdy = 0;
-    if (x + foodprops.width > GRID_WIDTH) {
+    if (x + foodprops.width / 2 > GRID_WIDTH) {
       wrapdx = -GRID_WIDTH * GRID_SCALE;
     }
-    if (y + foodprops.height > GRID_HEIGHT) {
+    if (y + foodprops.height / 2 > GRID_HEIGHT) {
       wrapdy = -GRID_HEIGHT * GRID_SCALE;
     }
     if (wrapdx) {
