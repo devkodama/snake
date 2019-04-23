@@ -17,7 +17,7 @@ var gotItemSound;
 
 
 //
-const UPDATE_INTERVAL = 40;      // in milliseconds
+const UPDATE_INTERVAL = 25;      // in milliseconds
 
 // Canvas is in screen pixels
 const CANVAS_WIDTH = 960;
@@ -36,11 +36,12 @@ const SCORE_COLOR = 'black';
 const SNAKE_COLOR = 'green';
 const SNAKE_HEAD_COLOR = 'blue';
 const SNAKE_BODY_COLOR = 'green';
-const SNAKE_WIDTH = 0.7;    // in grid units
-const SNAKE_TURNING_RADIUS = 0.5;   // in grid units
-const SNAKE_LENGTH = 20;  // in units of (grid divided by VELOCITY_SCALE)
-const SNAKE_VELOCITY_SCALE = 0.2; // in grid units
-const SNAKE_INV_VELOCITY2 = Math.floor(1 / (2 * SNAKE_VELOCITY_SCALE));
+const SNAKE_WIDTH = 0.8;    // in grid units
+const SNAKE_LENGTH = 8;     // in grid units
+const SNAKE_TAIL_WIDTH = 0.2    // in grid units
+const SNAKE_TAIL_LENGTH = 4     // in grid units
+const SNAKE_TURNING_RADIUS = 1;   // in grid units
+const SNAKE_VELOCITY_SCALE = 0.1; // in grid units
 
 // Food constants
 //   width and height are dimensions of food item in grid units
@@ -58,7 +59,7 @@ const FOOD_MENU = {
   "kk_coffee_cup": { width: 1, height: 1.5, points: 50 },
 };
 const FOOD_GRID_SPACING = 0.2;
-const FOOD_RATE = 0.1;
+const FOOD_RATE = 0.05;
 
 
 // Snake and food statuses
@@ -165,6 +166,8 @@ class Sound {
 class Snake {
 
   constructor(startpos, startlen=SNAKE_LENGTH) {
+    startlen /= SNAKE_VELOCITY_SCALE;
+
     this.pos = new Point(startpos.x, startpos.y);    // position of snake head
     this.color = SNAKE_COLOR;
     this.headcolor = SNAKE_HEAD_COLOR;
@@ -313,8 +316,9 @@ class Snake {
     }
   }
 
-  // check for collision of snake head with position pos
-  collision(item) {
+
+  // check for collision of snake head with food item at position pos
+  collideWithFood(item) {
     let head;
     let itemprops;
     let hx, hy;
@@ -359,146 +363,140 @@ class Snake {
         return true;
     }
 
-    // if the
-
+    // No collision detected, return false
     return false;
   }
+
+
+  // check for collision of snake head with snake body
+  collideWithSelf(item) {
+    let head;
+    let itemprops;
+    let hx, hy;
+    let fx, fy;
+    let posx0, posy0;
+    let posx1, posy1;
+
+    if (item.status == EATEN) {
+      console.log('warning: checking for collision with already eaten item')
+      return false;
+    }
+
+    // (posx0, posy0) and (posx1, posy1) define a bounding box within which the
+    // food item location (origin) must fall to collide
+
+    itemprops = FOOD_MENU[item.type];
+    fx = item.pos.x;
+    fy = item.pos.y;
+
+    head = this.body[0];
+    hx = head.x - this.width / 2;
+    hy = head.y - this.width / 2;
+
+    if (hx < 1 && fx >= GRID_WIDTH - 1) {
+      fx -= GRID_WIDTH;
+    }
+    if (hy < 1 && fy >= GRID_HEIGHT - 1) {
+      fy -= GRID_HEIGHT;
+    }
+    if (hx >= GRID_WIDTH - 1 && fx < 1) {
+      fx += GRID_WIDTH;
+    }
+    if (hy >= GRID_HEIGHT - 1 && fy < 1) {
+      fy += GRID_HEIGHT;
+    }
+    posx0 = hx - itemprops.width;
+    posx1 = hx + this.width;
+    posy0 = hy - itemprops.height;
+    posy1 = hy + this.width;
+
+    if (fx > posx0 && fx < posx1 && fy > posy0 && fy < posy1) {
+        return true;
+    }
+
+    // No collision detected, return false
+    return false;
+  }
+
 
   // draw the snake on the global game canvas
   // if the snake extends past the last row or column, need to also draw the part that wraps around
   //
   draw() {
-    let headpos, tailpos;
-    let p;
+    let pos;
     let x, y;
-    let wrap;
-
     let ctx;
-    let cornerindex;
-    let preindex;
-    let postindex;
-    let prediff;
-    let postdiff;
-    let cornerpos;
-    let prepos;
-    let postpos;
-    let radius;
-    let radiusx, radiusy;
+    let widthtotalsteps;
+    let widthcurrentstep;
+    let tailwidthdiff;
+
+    function _drawWithWrap(pos, diameter, color) {
+      let x, y;
+      let r;
+      let wrapdx, wrapdy;
+
+      ctx.fillStyle = color;
+
+      x = pos.x;
+      y = pos.y;
+      r = diameter / 2;
+      ctx.beginPath();
+      ctx.arc(x * GRID_SCALE, y * GRID_SCALE, r * GRID_SCALE, 0, Math.PI * 2);
+      ctx.fill();
+
+      // if wraparound, draw again
+      wrapdx = 0;
+      wrapdy = 0;
+      if (x + r > GRID_WIDTH) {
+        wrapdx = -GRID_WIDTH * GRID_SCALE;
+      } else if (x - r < 0) {
+        wrapdx = GRID_WIDTH * GRID_SCALE;
+      }
+      if (y + r > GRID_HEIGHT) {
+        wrapdy = -GRID_HEIGHT * GRID_SCALE;
+      } else if (y - r < 0) {
+        wrapdy = GRID_HEIGHT * GRID_SCALE;
+      }
+      if (wrapdx) {
+        ctx.translate(wrapdx, 0);
+        ctx.beginPath();
+        ctx.arc(x * GRID_SCALE, y * GRID_SCALE, r * GRID_SCALE, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.translate(-wrapdx, 0);
+      }
+      if (wrapdy) {
+        ctx.translate(0, wrapdy);
+        ctx.beginPath();
+        ctx.arc(x * GRID_SCALE, y * GRID_SCALE, r * GRID_SCALE, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.translate(0, -wrapdy);
+      }
+      if (wrapdx && wrapdy) {
+        ctx.translate(wrapdx, wrapdy);
+        ctx.beginPath();
+        ctx.arc(x * GRID_SCALE, y * GRID_SCALE, r * GRID_SCALE, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.translate(-wrapdx, -wrapdy);
+      }
+    }
 
     // get the canvas context
     ctx = gameCanvas.context;
 
-    // draw snake from head to tail then draws head
-
-    // get head and tail positions
-    headpos = this.body[0];
-    tailpos = this.body[this.body.length-1];
-
-    // define path
-    ctx.beginPath();
-    ctx.moveTo(headpos.x * GRID_SCALE, headpos.y * GRID_SCALE);
-
-    // find each corner
-    cornerindex = -1;
-    for (let i = 1; i < this.body.length; i++) {
-
-      // find the starting and ending points of the turn, as indexed by preindex and postindex
-      if (this.corner[i]) {
-        cornerindex = i;
-        preindex = i - SNAKE_INV_VELOCITY2;
-        postindex = i + SNAKE_INV_VELOCITY2;
-        if (preindex < 0) {
-          preindex = 0;
-        }
-        if (postindex > this.body.length - 1) {
-          postindex = this.body.length - 1;
-        }
-
-        prediff = cornerindex - preindex;
-        postdiff = postindex - cornerindex;
-        if (prediff > postdiff) {
-          preindex += (prediff - postdiff);
-        }
-        if (postdiff > prediff) {
-          postindex -= (postdiff - prediff);
-        }
-
-
-        prepos = this.body[preindex];
-        cornerpos = this.body[cornerindex];
-        postpos = this.body[postindex];
-
-        radiusx = Math.max(Math.abs(cornerpos.x - prepos.x), Math.abs(postpos.x - cornerpos.x));
-        radiusy = Math.max(Math.abs(cornerpos.y - prepos.y), Math.abs(postpos.y - cornerpos.y));
-        radius = Math.min(radiusx, radiusy);
-
-        // line to starting point of turn
-        ctx.lineTo(prepos.x * GRID_SCALE, prepos.y * GRID_SCALE);
-
-        // create turn
-        ctx.arcTo(cornerpos.x * GRID_SCALE, cornerpos.y * GRID_SCALE, postpos.x * GRID_SCALE, postpos.y * GRID_SCALE, radius * GRID_SCALE);
+    // draw snake from tail to head
+    // drawn as a series of circles with tapered tail
+    widthtotalsteps = SNAKE_TAIL_LENGTH / SNAKE_VELOCITY_SCALE;
+    widthcurrentstep = SNAKE_TAIL_LENGTH / SNAKE_VELOCITY_SCALE;
+    tailwidthdiff = this.width - SNAKE_TAIL_WIDTH;
+    for (let i = this.body.length - 1; i > 0; i--) {
+      pos = this.body[i];
+      _drawWithWrap(pos, this.width - tailwidthdiff * (widthcurrentstep / widthtotalsteps), this.bodycolor);
+      widthcurrentstep -= 1;
+      if (widthcurrentstep <0) {
+        widthcurrentstep = 0;
       }
     }
-
-    // finish tail
-    if (cornerindex < 0 || postindex < this.body.length - 1) {
-        // still have some tail after the last turn
-        ctx.lineTo(tailpos.x * GRID_SCALE, tailpos.y * GRID_SCALE);
-    }
-
-    // render path
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = SNAKE_WIDTH * GRID_SCALE;
-    ctx.strokeStyle = "blue";
-    ctx.stroke();
-
-    // now draw the head
-    ctx.beginPath();
-    ctx.arc(headpos.x * GRID_SCALE, headpos.y * GRID_SCALE, (SNAKE_WIDTH * GRID_SCALE) / 2, 0, 2 * Math.PI);
-    ctx.fillStyle = "red";
-    ctx.fill();
-
-
-  }
-
-
-  // draw the snake on the global game canvas
-  // if the snake extends past the last row or column, need to also draw the part that wraps around
-  draw_old() {
-    let p;
-    let x, y;
-    let wrap;
-
-    // get the canvas context
-    let ctx = gameCanvas.context;
-
-    // draw body then head segments
-    ctx.fillStyle = this.bodycolor;
-    for (let i=1; i<this.body.length; i++) {
-      p = this.body[i];
-      ctx.fillRect(p.x*GRID_SCALE, p.y*GRID_SCALE, GRID_SCALE, GRID_SCALE);
-    }
-    p = this.body[0];
-    x = p.x;
-    y = p.y;
-
-    ctx.fillStyle = this.headcolor;
-    ctx.fillRect(x * GRID_SCALE, y * GRID_SCALE, GRID_SCALE, GRID_SCALE);
-
-    // if wraparound, draw again
-    wrap = false;
-    if (x > GRID_WIDTH - 1) {
-      x -= GRID_WIDTH;
-      wrap = true;
-    }
-    if (y > GRID_HEIGHT - 1) {
-      y -= GRID_HEIGHT;
-      wrap = true;
-    }
-    if (wrap) {
-      ctx.fillRect(x * GRID_SCALE, y * GRID_SCALE, GRID_SCALE, GRID_SCALE);
-    }
+    _drawWithWrap(this.body[0], this.width, this.headcolor);
 
   }
 
@@ -748,7 +746,7 @@ function gameTick () {
 
   // check for snake collisions with items in foodItems
   for (let i=0; i<foodItems.length; i++) {
-    if (playerSnake.collision(foodItems[i])) {
+    if (playerSnake.collideWithFood(foodItems[i])) {
       points = foodItems[i].eat();
       playerScore.add(points);
       playerSnake.growthenergy += points/10;
