@@ -893,7 +893,8 @@ class Controller {
           this.currentdirection = RIGHT;
           break;
         default:
-          this.currentdirection = RIGHT;
+          this.currentdirection = null;
+          break;
       }
 
     } else if (this.newTouch) {
@@ -910,6 +911,27 @@ class Controller {
 
       // reset touch after responding to it
       gameController.newTouch = false;
+
+      if (!this.currentdirection) {
+        // determine current heading from playerSnake Object
+        switch (playerSnake.heading) {
+          case 0:
+            this.currentdirection = RIGHT;
+            break;
+          case 90:
+            this.currentdirection = DOWN;
+            break;
+          case 180:
+            this.currentdirection = LEFT;
+            break;
+          case -90:
+            this.currentdirection = UP;
+            break;
+          default:
+            this.currentdirection = UP;
+            break;
+        }
+      }
 
       if (this.currentdirection == UP || this.currentdirection == DOWN) {
         this.currentdirection = (dx >= 0) ? RIGHT : LEFT;
