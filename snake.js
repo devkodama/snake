@@ -1032,6 +1032,7 @@ function startPressed() {
   console.log("Start pressed down...");
   document.getElementById('eat').play();
   document.getElementById('eat').pause();
+  gameCanvas.status = PLAY;
 
 }
 
@@ -1081,7 +1082,6 @@ function initializeGame() {
     if (gameCanvas.status == PLAY) {
       e.preventDefault();
     }
-
   });
   window.addEventListener('touchmove', function (e) {
     gameController.touchx = e.touches[0].screenX;
@@ -1090,7 +1090,6 @@ function initializeGame() {
     if (gameCanvas.status == PLAY) {
       e.preventDefault();
     }
-
   });
 
 
@@ -1115,7 +1114,7 @@ function initializeGame() {
   // put game in attract mode
   gameCanvas.status = ATTRACT;
 
-  gameCanvas.status = PLAY;
+//  gameCanvas.status = PLAY;
 
   // Start game loop
   gameCanvas.interval = setInterval(gameTick, UPDATE_INTERVAL);
