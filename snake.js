@@ -873,14 +873,18 @@ class Controller {
 
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) {
+          this.lastkey = 'ArrowRight';
           return RIGHT;
         } else {
+          this.lastkey = 'ArrowLeft';
           return LEFT;
         }
       } else {
         if (dy > 0) {
+          this.lastkey = 'ArrowDown';
           return DOWN;
         } else {
+          this.lastkey = 'ArrowUp';
           return UP;
         }
       }
