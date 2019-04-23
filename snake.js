@@ -885,8 +885,8 @@ class Controller {
       }
 
       // calculate direction based on vector from snake's head
-      dx = playerSnake.body[0].pos.x - this.touchx / GRID_SCALE;
-      dy = playerSnake.body[0].pos.y - this.touchy / GRID_SCALE;
+      dx = playerSnake.body[0].x - this.touchx / GRID_SCALE;
+      dy = playerSnake.body[0].y - this.touchy / GRID_SCALE;
 
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx > 0) {
