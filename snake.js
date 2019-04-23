@@ -872,7 +872,7 @@ class Controller {
 
         ctx.font = "16 pt Arial";
         ctx.fillStyle = "blue";
-        ctx.fillText( 'a', gameController.touchx, gameController.touchy);
+        ctx.fillText( this.lastkey, gameController.touchx, gameController.touchy);
       }
 
     } else if (this.touchx >= 0 && this.touchy >= 0) {
