@@ -893,7 +893,7 @@ class Controller {
           this.currentdirection = RIGHT;
           break;
         default:
-          this.currentdirection = null;
+          this.currentdirection = RIGHT;
       }
 
     } else if (this.newTouch) {
