@@ -1030,13 +1030,6 @@ function initializeGame() {
     if (gameCanvas.status == PLAY) {
     //  e.preventDefault();
     }
-    {
-      let ctx = gameCanvas.context;
-
-      ctx.font = "12 pt Arial";
-      ctx.fillStyle = "red";
-      ctx.fillText( 'touchx ' + gameController.touchx + 'touchy ' + gameController.touchy, CANVAS_WIDTH / 2 - 20, CANVAS_HEIGHT / 2);
-    }
 
   });
   window.addEventListener('touchmove', function (e) {
@@ -1051,8 +1044,8 @@ function initializeGame() {
       let ctx = gameCanvas.context;
 
       ctx.font = "12 pt Arial";
-      ctx.fillStyle = "red";
-      ctx.fillText( 'touchx ' + gameController.touchx + 'touchy ' + gameController.touchy, CANVAS_WIDTH / 2 - 20, CANVAS_HEIGHT / 2);
+      ctx.fillStyle = "green";
+      ctx.fillText( 'touchx ' + gameController.touchx + 'touchy ' + gameController.touchy, gameController.touchx, gameController.touchy);
     }
 
   });
