@@ -868,6 +868,7 @@ class Controller {
     this.prevkey = null;
     this.touchx = -1;
     this.touchy = -1;
+    this.newTouch = false;
   }
 
   direction () {
@@ -894,7 +895,7 @@ class Controller {
           return null;
       }
 
-    } else if (this.touchx >= 0 && this.touchy >= 0) {
+    } else if (newTouch) {
 
       // calculate direction based on vector from snake's head
       dx = playerSnake.body[0].x - this.touchx / GRID_SCALE;
@@ -1071,6 +1072,7 @@ function initializeGame() {
   window.addEventListener('touchstart', function (e) {
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
+    gameController.newTouch = true;
     if (gameCanvas.status == PLAY) {
       e.preventDefault();
     }
@@ -1079,6 +1081,7 @@ function initializeGame() {
   window.addEventListener('touchmove', function (e) {
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
+    gameController.newTouch = true;
     if (gameCanvas.status == PLAY) {
       e.preventDefault();
     }
