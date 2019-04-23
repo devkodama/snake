@@ -869,7 +869,7 @@ class Controller {
     this.touchx = -1;
     this.touchy = -1;
     this.newTouch = false;
-    this.direction = null;
+    this.currentdirection = null;
   }
 
   direction () {
@@ -881,19 +881,19 @@ class Controller {
 
       switch (this.lastkey) {
         case 'ArrowUp':
-          this.direction = UP;
+          this.currentdirection = UP;
           break;
         case 'ArrowDown':
-          this.direction = DOWN;
+          this.currentdirection = DOWN;
           break;
         case 'ArrowLeft':
-          this.direction = LEFT;
+          this.currentdirection = LEFT;
           break;
         case 'ArrowRight':
-          this.direction = RIGHT;
+          this.currentdirection = RIGHT;
           break;
         default:
-          this.direction = null;
+          this.currentdirection = null;
       }
 
     } else if (this.newTouch) {
@@ -906,7 +906,7 @@ class Controller {
       dy = this.touchy / GRID_SCALE - playerSnake.body[0].y;
 
 //      debugDisplay.print('hx,hy = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y));
-      debugDisplay.print('hx,hy; tx,ty; dx,dy = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y) + '; ' + Math.round(this.touchx/ GRID_SCALE) + ', ' + Math.round(this.touchy/ GRID_SCALE) + '; ' + Math.round(dx*10)/10 + ', ' + Math.round(dy*10)/10);
+      debugDisplay.print('hx,hy; tx,ty; dx,dy; cdir = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y) + '; ' + Math.round(this.touchx/ GRID_SCALE) + ', ' + Math.round(this.touchy/ GRID_SCALE) + '; ' + Math.round(dx*10)/10 + ', ' + Math.round(dy*10)/10, + '; ' + this.currentdirection);
 
       // reset touch after responding to it
 //      this.touchx = -1;
@@ -916,24 +916,24 @@ gameController.newTouch = false;
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx >= 0) {
 //          this.lastkey = 'ArrowRight';
-          this.direction = RIGHT;
+          this.currentdirection = RIGHT;
         } else {
 //          this.lastkey = 'ArrowLeft';
-          this.direction = LEFT;
+          this.currentdirection = LEFT;
         }
       } else {
         if (dy >= 0) {
 //          this.lastkey = 'ArrowDown';
-          this.direction = UP;
+          this.currentdirection = UP;
         } else {
 //          this.lastkey = 'ArrowUp';
-          this.direction = DOWN;
+          this.currentdirection = DOWN;
         }
       }
 
     }
 
-    return this.direction;
+    return this.currentdirection;
 
   }
 
