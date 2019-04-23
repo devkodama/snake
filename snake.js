@@ -1120,7 +1120,7 @@ function initializeGame() {
   // put game in attract mode
   gameCanvas.status = ATTRACT;
 
-//  gameCanvas.status = PLAY;
+  gameCanvas.status = PLAY;
 
   // Start game loop
   gameCanvas.interval = setInterval(gameTick, UPDATE_INTERVAL);
