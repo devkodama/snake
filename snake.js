@@ -869,6 +869,13 @@ class Controller {
       }
 
     } else if (this.touchx >= 0 && this.touchy >= 0) {
+      {
+        let ctx = gameCanvas.context;
+
+        ctx.font = "12 pt Arial";
+        ctx.fillStyle = "blue";
+        ctx.fillText( 'x' + this.touchx + ', y' + this.touchy, gameController.touchx, gameController.touchy);
+      }
 
       // calculate direction based on vector from snake's head
       dx = playerSnake.body[0].pos.x - this.touchx / GRID_SCALE;
@@ -889,7 +896,7 @@ class Controller {
       }
 
     } else {
-      return DOWN;
+      return LEFT;
     }
   }
 
