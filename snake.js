@@ -886,7 +886,7 @@ class Controller {
       dy = playerSnake.body[0].y - this.touchy / GRID_SCALE;
 
       if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 0) {
+        if (dx < 0) {
           return RIGHT;
         } else {
           return LEFT;
@@ -898,6 +898,10 @@ class Controller {
           return UP;
         }
       }
+
+      // reset touch after responding to it
+      this.touchx = -1;
+      this.touchy = -1;
 
     }
 
