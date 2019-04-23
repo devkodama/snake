@@ -22,8 +22,8 @@ var debugDisplay;
 const UPDATE_INTERVAL = 2;      // in milliseconds
 
 // Canvas is in screen pixels
-const CANVAS_WIDTH = 960;
-const CANVAS_HEIGHT = 720;
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
 
 // Game is played on a grid
 const GRID_SCALE = 50;
