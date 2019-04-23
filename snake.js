@@ -866,6 +866,8 @@ class Controller {
       dx = playerSnake.body[0].pos.x - this.touchx / GRID_SCALE;
       dy = playerSnake.body[0].pos.y - this.touchy / GRID_SCALE;
 
+      return DOWN;
+
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx > 0) {
           return RIGHT;
@@ -1030,6 +1032,13 @@ function initializeGame() {
     if (gameCanvas.status == PLAY) {
     //  e.preventDefault();
     }
+    {
+      let ctx = gameCanvas.context;
+
+      ctx.font = "12 pt Arial";
+      ctx.fillStyle = "orange";
+      ctx.fillText( 'touchx ' + gameController.touchx + 'touchy ' + gameController.touchy, gameController.touchx, gameController.touchy);
+    }
 
   });
   window.addEventListener('touchmove', function (e) {
@@ -1038,7 +1047,7 @@ function initializeGame() {
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
     if (gameCanvas.status == PLAY) {
-    //  e.preventDefault();
+      e.preventDefault();
     }
     {
       let ctx = gameCanvas.context;
