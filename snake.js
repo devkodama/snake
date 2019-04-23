@@ -840,6 +840,7 @@ class Controller {
   }
 
   direction () {
+    let dx, dy;
 
     {
       let ctx = gameCanvas.context;
@@ -850,6 +851,9 @@ class Controller {
     }
 
     if (this.lastkey) {
+      dx = playerSnake.body[0].x - 332 / GRID_SCALE;
+      dy = playerSnake.body[0].y - 308 / GRID_SCALE;
+
 
       switch (this.lastkey) {
         case 'ArrowUp':
@@ -867,20 +871,13 @@ class Controller {
         default:
           return null;
       }
-      {
-        let ctx = gameCanvas.context;
-
-        ctx.font = "16 pt Arial";
-        ctx.fillStyle = "blue";
-        ctx.fillText( this.lastkey, gameController.touchx, gameController.touchy);
-      }
 
     } else if (this.touchx >= 0 && this.touchy >= 0) {
       {
         let ctx = gameCanvas.context;
 
         ctx.font = "12 pt Arial";
-        ctx.fillStyle = "red";
+        ctx.fillStyle = "green";
         ctx.fillText( 'b', gameController.touchx, gameController.touchy);
       }
 
