@@ -161,7 +161,9 @@ class Sound {
 
   // start playing the sound
   play() {
-    let audio = document.getElementById(this.name);
+    let audio;
+
+    audio = document.getElementById(this.name);
     audio.currentTime = 0;
     audio.play();
   }
@@ -935,10 +937,24 @@ function gameTick () {
 
 }
 
-// This is called by the browser when START button is pressed to start the game
-function startGame() {
 
-  console.log("Start button pressed...")
+
+// This is called by the browser when START button is pressed down
+function startPressed() {
+
+  // initialize audio for mobile browsers
+  console.log("Start pressed down...")
+  document.getElementById('eat').play();
+  document.getElementById('eat').pause();
+
+}
+
+
+// This is called by the browser when START button is released
+function startGame() {
+  
+  console.log("Game started...")
+
   // put game in attract mode
   gameCanvas.status = PLAY;
 
