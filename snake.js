@@ -14,6 +14,7 @@ var playerSnake;
 var playerScore;
 var foodItems;
 var gotItemSound;
+var playerDeadSound;
 
 
 //
@@ -862,8 +863,9 @@ class Controller {
       console.log(this.touchx, this.touchy);
 
       // calculate direction based on vector from snake's head
-      dx = playerSnake.body[0].pos.x - this.touchx;
-      dy = playerSnake.body[0].pos.y - this.touchy;
+      dx = playerSnake.body[0].pos.x - this.touchx / GRID_SCALE;
+      dy = playerSnake.body[0].pos.y - this.touchy / GRID_SCALE;
+
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx > 0) {
           return RIGHT;
@@ -1018,6 +1020,16 @@ function initializeGame() {
     gameController.touchx = e.touches[0].pageX - canvas.offsetLeft;
     gameController.touchy = e.touches[0].pageY - canvas.offsetTop;
     e.preventDefault();
+    {
+
+      // get the canvas context
+      let ctx = gameCanvas.context;
+
+      ctx.font = "12 pt Arial";
+      ctx.fillStyle = "blue";
+      ctx.fillText( 'touchx ' + this.touchx + 'touchy ' + this.touchy, CANVAS_WIDTH / 2 - 20, CANVAS_HEIGHT / 2);
+    }
+
   })
   window.addEventListener('touchmove', function (e) {
     gameController.prevkey = gameController.lastkey;
