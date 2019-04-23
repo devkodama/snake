@@ -845,7 +845,7 @@ class Controller {
       let ctx = gameCanvas.context;
 
       ctx.font = "12 pt Arial";
-      ctx.fillStyle = "purple";
+      ctx.fillStyle = "orange";
       ctx.fillText( 'x' + this.touchx + ', y' + this.touchy, gameController.touchx, gameController.touchy);
     }
 
