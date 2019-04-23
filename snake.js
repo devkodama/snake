@@ -893,7 +893,7 @@ class Controller {
           this.currentdirection = RIGHT;
           break;
         default:
-          this.currentdirection = null;
+          this.currentdirection = RIGHT;
       }
 
     } else if (this.newTouch) {
@@ -906,7 +906,7 @@ class Controller {
       dy = this.touchy / GRID_SCALE - playerSnake.body[0].y;
 
 //      debugDisplay.print('hx,hy = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y));
-      debugDisplay.print('hx,hy; tx,ty; dx,dy; cdir = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y) + '; ' + Math.round(this.touchx/ GRID_SCALE) + ', ' + Math.round(this.touchy/ GRID_SCALE) + '; ' + Math.round(dx*10)/10 + ', ' + Math.round(dy*10)/10 + '; ' + this.currentdirection);
+      debugDisplay.print('hx,hy; tx,ty; dx,dy; cdir = ' + Math.round(playerSnake.body[0].x) + ', ' + Math.round(playerSnake.body[0].y) + '; ' + Math.round(this.touchx/ GRID_SCALE) + ', ' + Math.round(this.touchy/ GRID_SCALE) + '; ' + Math.round(dx*100)/100 + ', ' + Math.round(dy*100)/100 + '; ' + this.currentdirection);
 
       // reset touch after responding to it
       gameController.newTouch = false;
