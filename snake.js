@@ -21,10 +21,10 @@ const UPDATE_INTERVAL = 2;      // in milliseconds
 
 // Canvas is in screen pixels
 const CANVAS_WIDTH = 960;
-const CANVAS_HEIGHT = 480;
+const CANVAS_HEIGHT = 720;
 
 // Game is played on a grid
-const GRID_SCALE = 40;
+const GRID_SCALE = 50;
 const GRID_WIDTH = CANVAS_WIDTH / GRID_SCALE;
 const GRID_HEIGHT = CANVAS_HEIGHT / GRID_SCALE;
 
@@ -38,11 +38,13 @@ const SNAKE_BODY_WIDTH = 0.6;   // in grid units
 const SNAKE_TAIL_WIDTH = 0.2    // in grid units
 const SNAKE_LENGTH = 6;         // in grid units
 const SNAKE_TAIL_LENGTH = 4     // in grid units
-const SNAKE_TURNING_RADIUS = 1;     // in grid units
+const SNAKE_TURNING_RADIUS = 0.2; // in grid units
 const SNAKE_VELOCITY_SCALE = 0.12;   // in grid units
 const SNAKE_RADIUS_OVERLAP = 0.8;   // in grid units
 const SNAKE_SPEED_INITIAL = 5;   // in arbitray units
 const SNAKE_SPEED_MAX = 1;        // in arbitray units
+const SNAKE_ANGULAR_VELOCITY = 10;    // in degrees
+const SNAKE_GROWTH_FACTOR = 3;    // how many growthenergy units needed to grow one body segment
 
 // Scoreboard constants
 const SCORE_FONT = '20px Arial Black';
@@ -55,16 +57,16 @@ const SCORE_MULTIPLIER = [ 0, 10, 5, 3, 2, 1 ];   // indexed by snake speed (1-5
 //   speedup is speedup additive when food is eaten
 //   speedup duration is how long in milliseconds the speedup lasts
 const FOOD_MENU = {
-  "donut_blueberry_polka_dot": { width: 1, height: 1, points: 20, speedup: 0, speedupduration: 0 },
-  "donut_chocolate_confetti": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
-  "donut_chocolate_sprinkle": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
-  "donut_frosted_vanilla": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
-  "donut_glazed": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
-  "donut_lemon_sprinkle": { width: 1, height: 1, points: 20, speedup: 0, speedupduration: 0 },
-  "donut_pistachio": { width: 1, height: 1, points: 30, speedup: 0, speedupduration: 0 },
-  "donut_strawberry_chocolate_striped": { width: 1, height: 1, points: 20, speedup: 0, speedupduration: 0 },
-  "donut_strawberry_coconut": { width: 1, height: 1, points: 10, speedup: 0, speedupduration: 0 },
-  "kk_coffee_cup": { width: 1, height: 1.5, points: 50, speedup: 1, speedupduration: 10000 },
+  "donut_blueberry_polka_dot": { width: 1, height: 1, points: 20, energy: 20, speedup: 0, speedupduration: 0 },
+  "donut_chocolate_confetti": { width: 1, height: 1, points: 10, energy: 10, speedup: 0, speedupduration: 0 },
+  "donut_chocolate_sprinkle": { width: 1, height: 1, points: 10, energy: 10, speedup: 0, speedupduration: 0 },
+  "donut_frosted_vanilla": { width: 1, height: 1, points: 10, energy: 10, speedup: 0, speedupduration: 0 },
+  "donut_glazed": { width: 1, height: 1, points: 10, energy: 10, speedup: 0, speedupduration: 0 },
+  "donut_lemon_sprinkle": { width: 1, height: 1, points: 20, energy: 20, speedup: 0, speedupduration: 0 },
+  "donut_pistachio": { width: 1, height: 1, points: 30, energy: 30, speedup: 0, speedupduration: 0 },
+  "donut_strawberry_chocolate_striped": { width: 1, height: 1, points: 20, energy: 20, speedup: 0, speedupduration: 0 },
+  "donut_strawberry_coconut": { width: 1, height: 1, points: 10, energy: 10, speedup: 0, speedupduration: 0 },
+  "kk_coffee_cup": { width: 1, height: 1.5, points: 50, energy: 0, speedup: 1, speedupduration: 10000 },
 };
 const FOOD_GRID_SPACING = 0.2;    // in grid units
 const FOOD_OVERLAP = 0.9;     // in grid units
@@ -198,34 +200,42 @@ class Snake {
     // indices align with body array
     this.corner = [ false ];
 
-    // now add on body segments and set initial velocity
+    // now add on body segments and set initial velocity and heading
+    // dx and dy are OPPOSITE to the heading vector
+    // heading is the degrees from the positive x-axis to the velocity vector
+    //   E = 0 deg,  S = 90 deg,  W = 180 deg,  N = -90 deg
     let direction = Math.floor(Math.random() * 4);
     let dx, dy;
     switch (direction) {
       case 0:
+        // heading SOUTH
         dx = 0;  dy = -SNAKE_VELOCITY_SCALE;
         this.vel = new Point(0, 1 * SNAKE_VELOCITY_SCALE);
-        this.heading = DOWN;
+        this.heading = 90;
         break;
       case 1:
+        // heading WEST
         dx = SNAKE_VELOCITY_SCALE;  dy = 0;
         this.vel = new Point(-1 * SNAKE_VELOCITY_SCALE, 0);
-        this.heading = LEFT;
+        this.heading = 180;
         break;
       case 2:
+        // heading NORTH
         dx = 0;  dy = SNAKE_VELOCITY_SCALE;
         this.vel = new Point(0, -1 * SNAKE_VELOCITY_SCALE);
-        this.heading = UP;
+        this.heading = -90;
         break;
       case 3:
+        // heading EAST
         dx = -SNAKE_VELOCITY_SCALE;  dy = 0;
         this.vel = new Point(1 * SNAKE_VELOCITY_SCALE, 0);
-        this.heading = RIGHT;
+        this.heading = 0;
         break;
       default:
         // should never get here
         console.log('error: Error in setting initial direction')
     }
+  console.log(this.heading);
     let nextseg = this.pos;
     for (let i=1; i<startlen; i++) {
       nextseg = nextseg.add(new Point(dx,dy));
@@ -235,9 +245,8 @@ class Snake {
   }
 
   // change the snake velocity based on the specified direction
-  // the snake cannot turn 180 degrees, so need to check current heading
-  // before changing directions
-  // the snake cannot turn tighter than its turning radius
+  // snake velocity changes in increments until it matches the desired direction
+  // the turning radius sets how tightly the snake is allowed to turn
   steer(direction) {
     let heading;
 
@@ -252,54 +261,122 @@ class Snake {
       return false;
     }
 
-    // change snake direction
-    heading = this.heading;
+    // change snake heading/veolicy towards desired direction
+    //   E = 0 deg,  S = 90 deg,  W = 180 deg,  N = -90 deg
+    heading = Math.round(playerSnake.heading);
+
     switch (direction) {
       case UP:
-        if (heading != UP && heading != DOWN) {
-          playerSnake.vel.x = 0;
-          playerSnake.vel.y = -1 * SNAKE_VELOCITY_SCALE;
-          this.heading = UP;
+        // make sure we are not heading due south or due north
+        if (heading != 90 && heading != -90) {
+          // change heading towards NORTH direction
+          if (playerSnake.vel.x > 0) {
+            heading -= SNAKE_ANGULAR_VELOCITY;
+          } else {
+            heading += SNAKE_ANGULAR_VELOCITY;
+          }
+          if (heading <= -180) {
+            heading += 360;
+          } else if (heading > 180) {
+            heading -= 360;
+          }
+          heading = Math.round(heading);
+          playerSnake.heading = heading;
+
+          console.log("UP: vx=" , playerSnake.vel.x, ", heading=", heading);
+
+          playerSnake.vel.x = Math.cos(heading * Math.PI / 180) * SNAKE_VELOCITY_SCALE;
+          playerSnake.vel.y = Math.sin(heading * Math.PI / 180) * SNAKE_VELOCITY_SCALE;
           this.justturned = true;
           this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE);
         }
         break;
       case DOWN:
-        if (heading != DOWN && heading != UP) {
-          playerSnake.vel.x = 0;
-          playerSnake.vel.y = 1 * SNAKE_VELOCITY_SCALE;
-          this.heading = DOWN;
+        // make sure we are not heading due north or due south
+        if (heading != -90 && heading != 90) {
+          // change heading towards NORTH direction
+          if (playerSnake.vel.x > 0) {
+            heading += SNAKE_ANGULAR_VELOCITY;
+          } else {
+            heading -= SNAKE_ANGULAR_VELOCITY;
+          }
+          if (heading <= -180) {
+            heading += 360;
+          } else if (heading > 180) {
+            heading -= 360;
+          }
+          heading = Math.round(heading);
+          playerSnake.heading = heading;
+
+          console.log("DOWN:" , heading);
+
+          playerSnake.vel.x = Math.cos(heading * Math.PI / 180) * SNAKE_VELOCITY_SCALE;
+          playerSnake.vel.y = Math.sin(heading * Math.PI / 180) * SNAKE_VELOCITY_SCALE;
           this.justturned = true;
           this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE);
         }
         break;
       case LEFT:
-        if (heading != LEFT && heading != RIGHT) {
-          playerSnake.vel.x = -1 * SNAKE_VELOCITY_SCALE;
-          playerSnake.vel.y = 0;
-          this.heading = LEFT;
+        // make sure we are not heading due west or due east
+        if (heading != 180 && heading != 0) {
+          // change heading towards NORTH direction
+          if (playerSnake.vel.y > 0) {
+            heading += SNAKE_ANGULAR_VELOCITY;
+          } else {
+            heading -= SNAKE_ANGULAR_VELOCITY;
+          }
+          if (heading <= -180) {
+            heading += 360;
+          } else if (heading > 180) {
+            heading -= 360;
+          }
+          heading = Math.round(heading);
+          playerSnake.heading = heading;
+
+          console.log("RIGHT:" , heading);
+
+          playerSnake.vel.x = Math.cos(heading * Math.PI / 180) * SNAKE_VELOCITY_SCALE;
+          playerSnake.vel.y = Math.sin(heading * Math.PI / 180) * SNAKE_VELOCITY_SCALE;
           this.justturned = true;
           this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE);
-        }
+          }
         break;
       case RIGHT:
-        if (heading != RIGHT && heading != LEFT) {
-          playerSnake.vel.x = 1 * SNAKE_VELOCITY_SCALE;
-          playerSnake.vel.y = 0;
-          this.heading = RIGHT;
+        // make sure we are not heading due east or due west
+        if (heading != 0 && heading != 180) {
+          // change heading towards NORTH direction
+          if (playerSnake.vel.y > 0) {
+            heading -= SNAKE_ANGULAR_VELOCITY;
+          } else {
+            heading += SNAKE_ANGULAR_VELOCITY;
+          }
+          if (heading <= -180) {
+            heading += 360;
+          } else if (heading > 180) {
+            heading -= 360;
+          }
+          heading = Math.round(heading);
+          playerSnake.heading = heading;
+
+          console.log("RIGHT:" , heading);
+
+          playerSnake.vel.x = Math.cos(heading * Math.PI / 180) * SNAKE_VELOCITY_SCALE;
+          playerSnake.vel.y = Math.sin(heading * Math.PI / 180) * SNAKE_VELOCITY_SCALE;
           this.justturned = true;
           this.turndelay = Math.round(SNAKE_TURNING_RADIUS/SNAKE_VELOCITY_SCALE);
-        }
+          }
         break;
       default:
-        // no valid direction, maintain previous velocity
+        // no valid direction, maintain previous heading/velocity
+        break;
     }
 
     return true;
   }
 
+
   // update the snake position based on its velocity
-  update(grow = false) {
+  update() {
     let newPoint;
 
     // only allow move when movedelay counter reaches zero
@@ -327,11 +404,14 @@ class Snake {
     this.body.unshift(newPoint);
     this.corner.unshift(false);   // set corner flag of new position to false
 
-    // snake automatically grows if it has positive growthenergy
-    // if not allowing the snake to grow, remove tail position to keep snake the same length
+    // snake grows if it has positive growthenergy
+    // growthenergy decreases by 1 each time
+    // only grow when growthenergy is odd (so every other turn) so the snake tail doesn't pause
+    // if not growing this turn, remove tail position to keep snake the same length
     if (this.growthenergy > 0) {
       this.growthenergy -= 1;
-    } else if (!grow) {
+    }
+    if (this.growthenergy <=0 || (this.growthenergy % SNAKE_GROWTH_FACTOR == 0)) {
       this.body.pop();
       this.corner.pop();
     }
@@ -562,6 +642,7 @@ class Food {
     this.type = type;
     this.width = foodprops.width;
     this.height = foodprops.height;
+    this.energy = foodprops.energy;
     this.speedup = foodprops.speedup;
     this.speedupduration = foodprops.speedupduration;
 
@@ -806,7 +887,7 @@ function gameTick () {
       if (playerSnake.collideWithFood(foodItems[i])) {
         points = foodItems[i].eat();
         playerScore.add(points * SCORE_MULTIPLIER[playerSnake.speed]);
-        playerSnake.growthenergy += points/10;
+        playerSnake.growthenergy += foodItems[i].energy;
 
         // handle speedup
         let speedup = foodItems[i].speedup;
