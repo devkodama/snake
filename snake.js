@@ -840,6 +840,15 @@ class Controller {
   }
 
   direction () {
+
+    {
+      let ctx = gameCanvas.context;
+
+      ctx.font = "12 pt Arial";
+      ctx.fillStyle = "purple";
+      ctx.fillText( 'x' + this.touchx + ', y' + this.touchy, gameController.touchx, gameController.touchy);
+    }
+
     if (this.lastkey) {
 
       switch (this.lastkey) {
@@ -860,13 +869,10 @@ class Controller {
       }
 
     } else if (this.touchx >= 0 && this.touchy >= 0) {
-      console.log(this.touchx, this.touchy);
 
       // calculate direction based on vector from snake's head
       dx = playerSnake.body[0].pos.x - this.touchx / GRID_SCALE;
       dy = playerSnake.body[0].pos.y - this.touchy / GRID_SCALE;
-
-      return DOWN;
 
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx > 0) {
@@ -882,6 +888,8 @@ class Controller {
         }
       }
 
+    } else {
+      return DOWN;
     }
   }
 
@@ -1037,7 +1045,7 @@ function initializeGame() {
 
       ctx.font = "12 pt Arial";
       ctx.fillStyle = "orange";
-      ctx.fillText( 'touchx ' + gameController.touchx + 'touchy ' + gameController.touchy, gameController.touchx, gameController.touchy);
+      ctx.fillText( 'x ' + gameController.touchx + 'y ' + gameController.touchy, gameController.touchx, gameController.touchy);
     }
 
   });
@@ -1054,7 +1062,7 @@ function initializeGame() {
 
       ctx.font = "12 pt Arial";
       ctx.fillStyle = "green";
-      ctx.fillText( 'touchx ' + gameController.touchx + 'touchy ' + gameController.touchy, gameController.touchx, gameController.touchy);
+      ctx.fillText( 'x' + gameController.touchx + ', y' + gameController.touchy, gameController.touchx, gameController.touchy);
     }
 
   });
