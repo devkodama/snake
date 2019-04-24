@@ -1081,7 +1081,7 @@ function initializeGame() {
     gameController.touchx = -1;
     gameController.touchy = -1;
   });
-  window.addEventListener('touchstart', function (e) {
+  document.addEventListener('touchstart', function (e) {
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
     gameController.newTouch = true;
@@ -1089,7 +1089,7 @@ function initializeGame() {
       e.preventDefault();
     }
   });
-  window.addEventListener('touchmove', function (e) {
+  document.addEventListener('touchmove', function (e) {
     gameController.touchx = e.touches[0].screenX;
     gameController.touchy = e.touches[0].screenY;
     gameController.newTouch = true;
